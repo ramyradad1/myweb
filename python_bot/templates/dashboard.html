@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerve Center - AI Command Bridge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#0a0e1a;--surface:#111827;--card:#1a2235;--border:#2a3548;
+            --primary:#6366f1;--primary-glow:rgba(99,102,241,0.25);
+            --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+            --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+        }
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .topbar{background:linear-gradient(135deg,#111827 0%,#1e1b4b 100%);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+        .topbar h1{font-size:20px;font-weight:700;background:linear-gradient(135deg,#818cf8,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .topbar .status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--success)}
+        .topbar .status::before{content:'';width:8px;height:8px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .container{max-width:1400px;margin:0 auto;padding:24px}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+        @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+        .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;transition:border-color .2s}
+        .card:hover{border-color:var(--primary)}
+        .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+        .card-title{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2)}
+        .phase-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;background:var(--primary-glow);color:#a5b4fc}
+        .quick-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+        .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+        .stat-value{font-size:28px;font-weight:900;background:linear-gradient(135deg,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-label{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+        label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+        input[type=number],select{width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit}
+        input[type=number]:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+        input[type=range]{width:100%;accent-color:var(--primary);margin:8px 0}
+        .range-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+        .btn{padding:12px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+        .btn-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 14px var(--primary-glow)}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--primary-glow)}
+        .btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+        .btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+        .btn-block{width:100%;margin-top:12px}
+        .module-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .module-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;transition:all .2s}
+        .module-item:hover{border-color:var(--primary)}
+        .module-info{flex:1}
+        .module-name{font-size:13px;font-weight:600;color:var(--text)}
+        .module-desc{font-size:10px;color:var(--text3);margin-top:2px}
+        .toggle{position:relative;width:44px;height:24px;flex-shrink:0;margin-left:10px}
+        .toggle input{opacity:0;width:0;height:0}
+        .toggle .slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#374151;border-radius:24px;cursor:pointer;transition:.3s}
+        .toggle .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+        .toggle input:checked+.slider{background:var(--primary)}
+        .toggle input:checked+.slider::before{transform:translateX(20px)}
+        .region-grid{display:flex;flex-wrap:wrap;gap:8px}
+        .region-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .2s;user-select:none}
+        .region-chip.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 2px 8px var(--primary-glow)}
+        .toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;transform:translateX(120%);transition:transform .3s;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+        .toast.show{transform:translateX(0)}
+        .toast-success{background:var(--success);color:#fff}
+        .toast-error{background:var(--danger);color:#fff}
+        .log-box{max-height:250px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'Courier New',monospace;font-size:11px;color:var(--text2);line-height:1.7}
+        .log-entry{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+        .section-title{font-size:18px;font-weight:700;margin:28px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+        .run-output{margin-top:16px;max-height:300px;overflow-y:auto;background:#000;border-radius:10px;padding:16px;font-family:'Courier New',monospace;font-size:12px;color:#10b981;white-space:pre-wrap;display:none}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>Nerve Center - AI Command Bridge</h1>
+        <div class="status">System Online | {{ now }}</div>
+    </div>
+
+    <div class="container">
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat">
+                <div class="stat-value">{{ settings.daily_article_quota }}</div>
+                <div class="stat-label">Articles/Day</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ settings.scheduler_interval_hours }}h</div>
+                <div class="stat-label">Run Interval</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ settings.modules.values()|select|list|length }}</div>
+                <div class="stat-label">Active Modules</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ settings.target_regions|length }}</div>
+                <div class="stat-label">Target Regions</div>
+            </div>
+        </div>
+
+        <!-- Run Button -->
+        <div class="card" style="text-align:center;background:linear-gradient(135deg,#1a1040,#1e1b4b,#1a2235)">
+            <h2 style="font-size:22px;margin-bottom:8px">Launch Nerve Center</h2>
+            <p style="color:var(--text3);margin-bottom:16px;font-size:13px">Execute the full autonomous AI pipeline (all enabled modules)</p>
+            <button class="btn btn-primary" onclick="runNerveCenter()" id="runBtn" style="font-size:16px;padding:14px 48px">
+                Run Now
+            </button>
+            <div class="run-output" id="runOutput"></div>
+        </div>
+
+        <div class="grid2">
+            <!-- LEFT COLUMN -->
+            <div>
+                <!-- Publishing Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Publishing Controls</span>
+                        <span class="phase-badge">Core</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                        <div>
+                            <label>Articles Per Day</label>
+                            <input type="number" id="daily_article_quota" value="{{ settings.daily_article_quota }}" min="1" max="50">
+                        </div>
+                        <div>
+                            <label>Run Every (Hours)</label>
+                            <input type="number" id="scheduler_interval_hours" value="{{ settings.scheduler_interval_hours }}" min="1" max="24">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Parameters -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">SEO Parameters</span>
+                        <span class="phase-badge">ML Engine</span>
+                    </div>
+                    <div>
+                        <label>Target Word Count: <span id="wcVal">{{ settings.target_word_count }}</span></label>
+                        <input type="range" id="target_word_count" min="500" max="3000" step="50" value="{{ settings.target_word_count }}" oninput="document.getElementById('wcVal').textContent=this.value">
+                        <div class="range-labels"><span>500</span><span>1500</span><span>3000</span></div>
+                    </div>
+                    <div style="margin-top:14px">
+                        <label>Target Image Count: <span id="imgVal">{{ settings.target_image_count }}</span></label>
+                        <input type="range" id="target_image_count" min="0" max="15" value="{{ settings.target_image_count }}" oninput="document.getElementById('imgVal').textContent=this.value">
+                        <div class="range-labels"><span>0</span><span>7</span><span>15</span></div>
+                    </div>
+                    <div style="margin-top:14px">
+                        <label>Keyword Density %: <span id="kdVal">{{ settings.target_keyword_density }}</span></label>
+                        <input type="range" id="target_keyword_density" min="0.5" max="8" step="0.5" value="{{ settings.target_keyword_density }}" oninput="document.getElementById('kdVal').textContent=this.value">
+                        <div class="range-labels"><span>0.5%</span><span>4%</span><span>8%</span></div>
+                    </div>
+                </div>
+
+                <!-- Geo Targeting -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Geo-Targeting Regions</span>
+                        <span class="phase-badge">Trends</span>
+                    </div>
+                    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Select countries to monitor for trending topics. The Trend Spotter and Competitor Monitor will focus on these markets.</p>
+                    <div class="region-grid" id="regionGrid">
+                        {% for code, name in regions.items() %}
+                        <div class="region-chip {% if code in settings.target_regions %}active{% endif %}" data-region="{{ code }}" onclick="toggleRegion(this)">
+                            {{ name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Memory & Audit -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Recent Bot Memory</span>
+                        <span class="phase-badge">Phase 9</span>
+                    </div>
+                    <div class="log-box">
+                        {% for entry in memory %}
+                        <div class="log-entry">[{{ entry.timestamp[:16] }}] {{ entry.action }} -> {{ entry.result }}</div>
+                        {% endfor %}
+                        {% if not memory %}
+                        <div class="log-entry" style="color:var(--text3)">No memory entries yet. Run the Nerve Center to start learning.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Module Toggles -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Module Control ({{ modules|length }} Modules)</span>
+                        <div>
+                            <button class="btn" style="font-size:11px;padding:6px 12px;background:var(--success);color:#fff;margin-right:6px" onclick="toggleAll(true)">All ON</button>
+                            <button class="btn" style="font-size:11px;padding:6px 12px;background:var(--danger);color:#fff" onclick="toggleAll(false)">All OFF</button>
+                        </div>
+                    </div>
+                    <div class="module-grid" id="moduleGrid">
+                        {% for key, meta in modules.items() %}
+                        <div class="module-item">
+                            <div class="module-info">
+                                <div class="module-name">{{ meta.name }}</div>
+                                <div class="module-desc">P{{ meta.phase }} | {{ meta.desc }}</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" data-module="{{ key }}" {% if settings.modules.get(key, true) %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Audit Log -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Audit Trail</span>
+                        <span class="phase-badge">Phase 10</span>
+                    </div>
+                    <div class="log-box">
+                        {% for entry in audit %}
+                        <div class="log-entry">[{{ entry.Timestamp[:16] }}] [{{ entry.Module }}] {{ entry.Action }} -> {{ entry.Result }}</div>
+                        {% endfor %}
+                        {% if not audit %}
+                        <div class="log-entry" style="color:var(--text3)">No audit entries yet.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <button class="btn btn-primary btn-block" onclick="saveAll()" style="font-size:16px;padding:16px;margin-top:8px;margin-bottom:32px">
+            Save All Settings
+        </button>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(msg, type='success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast toast-' + type + ' show';
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function toggleRegion(el) {
+            el.classList.toggle('active');
+        }
+
+        function toggleAll(state) {
+            document.querySelectorAll('#moduleGrid input[type=checkbox]').forEach(cb => cb.checked = state);
+        }
+
+        function collectSettings() {
+            const modules = {};
+            document.querySelectorAll('#moduleGrid input[type=checkbox]').forEach(cb => {
+                modules[cb.dataset.module] = cb.checked;
+            });
+
+            const regions = [];
+            document.querySelectorAll('.region-chip.active').forEach(el => {
+                regions.push(el.dataset.region);
+            });
+
+            return {
+                daily_article_quota: document.getElementById('daily_article_quota').value,
+                scheduler_interval_hours: document.getElementById('scheduler_interval_hours').value,
+                target_word_count: document.getElementById('target_word_count').value,
+                target_image_count: document.getElementById('target_image_count').value,
+                target_keyword_density: document.getElementById('target_keyword_density').value,
+                target_regions: regions,
+                modules: modules
+            };
+        }
+
+        async function saveAll() {
+            try {
+                const res = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(collectSettings())
+                });
+                const data = await res.json();
+                showToast(data.message || 'Saved!', 'success');
+            } catch(e) {
+                showToast('Save failed: ' + e.message, 'error');
+            }
+        }
+
+        async function runNerveCenter() {
+            const btn = document.getElementById('runBtn');
+            const output = document.getElementById('runOutput');
+            btn.textContent = 'Running...';
+            btn.disabled = true;
+            output.style.display = 'block';
+            output.textContent = '[ Initializing Nerve Center... ]\n';
+
+            try {
+                const res = await fetch('/api/run', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    output.textContent = data.output;
+                    showToast('Nerve Center cycle completed!', 'success');
+                } else {
+                    output.textContent = 'ERROR: ' + data.message;
+                    showToast('Error: ' + data.message, 'error');
+                }
+            } catch(e) {
+                output.textContent = 'NETWORK ERROR: ' + e.message;
+                showToast('Network error', 'error');
+            } finally {
+                btn.textContent = 'Run Now';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

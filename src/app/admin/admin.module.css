@@ -1,0 +1,624 @@
+.adminContainer {
+  display: flex;
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.authContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+}
+
+.authModal {
+  width: 100%;
+  max-width: 400px;
+  padding: 3rem 2rem;
+}
+
+.authTitle {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.errorBox {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--foreground-secondary);
+}
+
+.inputField {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.submitBtn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.sidebar {
+  width: 280px;
+  background: var(--background-secondary);
+  border-left: 1px solid var(--border);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.sidebarTitle {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.sidebarSubtitle {
+  font-size: 0.875rem;
+  color: var(--foreground-secondary);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.navLink {
+  padding: 0.75rem 1rem;
+  color: var(--foreground-secondary);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+
+.navLinkActive {
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+}
+
+.backLink {
+  padding: 0.75rem 1rem;
+  color: var(--foreground-secondary);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+  margin-top: auto;
+}
+
+.logoutBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground-secondary);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+}
+
+.mainContent {
+  flex: 1;
+  padding: 3rem;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.headerTitle {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.headerSubtitle {
+  color: var(--foreground-secondary);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.statCard {
+  padding: 1.5rem;
+}
+
+.statTitle {
+  color: var(--foreground-secondary);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.statTrend {
+  color: #10b981;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.engineCard {
+  padding: 1.5rem;
+  border-left: 4px solid #8b5cf6;
+}
+
+.engineStatus {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #8b5cf6;
+  margin-top: 0.5rem;
+}
+
+.engineData {
+  font-size: 0.875rem;
+  color: var(--foreground-secondary);
+  margin-top: 0.5rem;
+}
+
+.activityContainer {
+  padding: 2rem;
+}
+
+.activityTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.activityDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.activityAction {
+  flex: 1;
+}
+
+.activityTime {
+  color: var(--foreground-secondary);
+  font-size: 0.875rem;
+}
+
+.dotPublish {
+  background: var(--primary);
+}
+
+.dotScrape {
+  background: var(--accent);
+}
+
+.dotRewrite {
+  background: #8b5cf6;
+}
+
+.dotSystem {
+  background: #a1a1aa;
+}
+
+.wFull {
+  width: 100%;
+}
+
+.btnStart {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
+.btnStop {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+/* Articles and Data Tables */
+.tableContainer {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tableHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tableTitle {
+  font-size: 1.25rem;
+}
+
+.searchInput {
+  background: var(--background);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  color: white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  padding: 1rem 1.5rem;
+  color: var(--foreground-secondary);
+  font-weight: normal;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.td {
+  padding: 1rem 1.5rem;
+}
+
+.tdTitle {
+  padding: 1rem 1.5rem;
+  font-weight: bold;
+}
+
+.tdDate {
+  padding: 1rem 1.5rem;
+  color: var(--foreground-secondary);
+}
+
+.statusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  display: inline-block;
+}
+
+.statusPublished {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.statusDraft {
+  background: rgba(161, 161, 170, 0.1);
+  color: #a1a1aa;
+}
+
+.actionBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-right: 1rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.actionBtn:hover {
+  opacity: 0.8;
+}
+
+.actionEdit {
+  color: var(--primary);
+}
+
+.actionDelete {
+  color: #ef4444;
+  margin-right: 0;
+}
+
+/* Bot Control Panels */
+.botGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.botPanel {
+  padding: 2rem;
+}
+
+.fullPanel {
+  padding: 2rem;
+  grid-column: 1 / -1;
+}
+
+.botPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.botPanelTitle {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.addBtn {
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.addBtn:hover {
+  background: var(--background-secondary);
+}
+
+.sourceList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sourceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--background-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.sourceActive {
+  color: #10b981;
+  font-size: 0.875rem;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.selectField {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.selectField:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.rangeInput {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.rangeContainer {
+  display: flex;
+  justify-content: space-between;
+  color: var(--foreground-secondary);
+  font-size: 0.875rem;
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scheduleGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.scheduleCol {
+  flex: 1 1 300px;
+}
+
+.scheduleColFull {
+  flex: 1 1 100%;
+}
+
+.helpText {
+  color: var(--foreground-secondary);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.btnOutline {
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  width: 200px;
+  color: white;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnOutline:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.backLinkArticle {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.formPanel {
+  padding: 2rem;
+  max-width: 800px;
+}
+
+.formLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.gridTwoCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.textareaField {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btnPadding {
+  padding: 0.75rem 1.5rem;
+}
+
+.centerLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.emptyState {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.actionEditLink {
+  display: inline-block;
+  text-decoration: none;
+  margin-right: 8px;
+}
+
+.saveMessage {
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.saveMessageSuccess {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.saveMessageError {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.sourceAction {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 4px;
+}
+
+.sourceActionContainer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+

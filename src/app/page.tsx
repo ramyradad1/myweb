@@ -1,65 +1,212 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import styles from './page.module.css';
+import ArticleCard from '@/components/ArticleCard';
+import { supabase } from '@/lib/supabase';
+
+const fallbackArticles = [
+  {
+    id: '1',
+    title: 'The Future of Artificial Intelligence in 2026 and Beyond',
+    excerpt: 'Explore how large language models are reshaping the tech landscape and how you can leverage them to maximize productivity in your daily workflow.',
+    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&q=80',
+    category: 'Technology',
+    date: 'March 24, 2026',
+    readTime: '5 min read',
+    slug: 'future-of-ai-2026'
+  },
+  {
+    id: '2',
+    title: 'Top SEO Strategies for the US Market',
+    excerpt: 'A comprehensive guide covering the most critical Google ranking factors, and how to outpace the competition using state-of-the-art editorial structures.',
+    imageUrl: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=500&q=80',
+    category: 'Marketing',
+    date: 'March 22, 2026',
+    readTime: '8 min read',
+    slug: 'seo-strategies-us-market'
+  },
+  {
+    id: '3',
+    title: 'The Independent Professional\'s Guide to Wealth Building',
+    excerpt: 'Discover the best global platforms for independent consultants, and learn how to market your services attractively to high-budget enterprise clients.',
+    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&q=80',
+    category: 'Business',
+    date: 'March 20, 2026',
+    readTime: '6 min read',
+    slug: 'freelancers-guide-increase-income'
+  }
+];
+
+interface Article {
+  id: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string;
+  category: string;
+  date: string;
+  readTime: string;
+  slug: string;
+}
 
 export default function Home() {
+  const [latestArticles, setLatestArticles] = useState<Article[]>(fallbackArticles);
+
+  useEffect(() => {
+    const fetchLatest = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('articles')
+          .select('*')
+          .order('publishedAt', { ascending: false })
+          .limit(3);
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mappedArticles = data.map((article: any) => {
+            const pubDate = article.publishedAt ? new Date(article.publishedAt) : null;
+            const dateStr = pubDate ? pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recent';
+            
+            const contentStr = typeof article.content === 'string' ? article.content : '';
+            const contentLength = contentStr.length;
+            const readMins = Math.max(3, Math.ceil(contentLength / 1200));
+            const excerpt = article.metaDescription || contentStr.replace(/<[^>]*>/g, '').substring(0, 160) + '...' || article.title;
+
+            return {
+              id: article.id,
+              title: article.title || 'Untitled',
+              excerpt,
+              imageUrl: article.heroImage || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80',
+              category: article.category || 'Technology',
+              date: dateStr,
+              readTime: `${readMins} min read`,
+              slug: article.slug || article.id,
+            };
+          });
+          setLatestArticles(mappedArticles);
+        }
+      } catch (err) {
+        console.error('Failed to fetch latest articles:', err);
+        // Keep fallback data
+      }
+    };
+    fetchLatest();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <div className={styles.heroBackground}></div>
+        <div className={styles.heroContent}>
+          <div className={styles.badge}>✨ Premium Editorial Excellence</div>
+          <h1 className={styles.title}>
+            Uncovering Truth <br />
+            with <span className={styles.titleHighlight}>Technify</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className={styles.subtitle}>
+            A premium editorial magazine delivering expert-curated analysis, global news, and deep insights across technology, business, and health tailored for the modern professional.
           </p>
+          <div className={styles.ctaGroup}>
+            <Link href="/articles" className="btn btn-primary">
+              Explore Latest Articles
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Stats Section */}
+      <section className={styles.statsSection}>
+        <div className="container">
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber}>342+</span>
+              <span className={styles.statLabel}>Published Features</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber}>1.2M</span>
+              <span className={styles.statLabel}>Monthly Readers</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber}>100%</span>
+              <span className={styles.statLabel}>Original Analysis</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber}>24/7</span>
+              <span className={styles.statLabel}>Global Coverage</span>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* How it Works / Editorial Process */}
+      <section className={styles.featuresSection}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Our Editorial Process</h2>
+          <p className={styles.subtitle}>Three steps to delivering unparalleled quality journalism</p>
+        </div>
+        
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <div className={styles.cardIcon}>1</div>
+            <h3 className={styles.cardTitle}>Global Sourcing</h3>
+            <p className={styles.cardDesc}>
+              Our research network monitors top global sources around the clock to bring you the most critical stories before they go mainstream.
+            </p>
+          </div>
+          
+          <div className={styles.card}>
+            <div className={styles.cardIcon}>2</div>
+            <h3 className={styles.cardTitle}>Expert Curation</h3>
+            <p className={styles.cardDesc}>
+              Our senior editors carefully analyze and synthesize complex information, stripping away the noise to uncover actionable insights.
+            </p>
+          </div>
+          
+          <div className={styles.card}>
+            <div className={styles.cardIcon}>3</div>
+            <h3 className={styles.cardTitle}>Daily Publishing</h3>
+            <p className={styles.cardDesc}>
+              We publish fresh, objective analysis every day, tailored specifically for professionals who need to stay ahead of the curve.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Latest Articles */}
+      <section className={styles.articlesSection}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Latest Editorial Insights</h2>
+          <p className={styles.subtitle}>Premium content published daily to keep you informed</p>
+        </div>
+        <div className={styles.grid}>
+          {latestArticles.map((article) => (
+            <ArticleCard key={article.id} {...article} />
+          ))}
+        </div>
+        <div className={styles.centerBtn}>
+           <Link href="/articles" className="btn btn-primary">
+             View All Articles →
+           </Link>
+         </div>
+      </section>
+
+      {/* Newsletter CTA */}
+      <section className={styles.newsletterSection}>
+        <div className="container">
+          <div className={styles.newsletterBox}>
+            <h2 className={styles.sectionTitle}>📬 Join Our Premium Newsletter</h2>
+            <p className={styles.subtitle}>Get exclusive insights delivered directly to your inbox every morning.</p>
+            <form className={styles.newsletterForm}>
+              <input type="email" placeholder="Enter your email address..." className={styles.newsletterInput} dir="ltr" />
+              <button type="submit" className="btn btn-primary">Subscribe Now</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
