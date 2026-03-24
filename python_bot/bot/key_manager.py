@@ -28,32 +28,19 @@ def decrypt(encrypted_str: str, secret_hex: str) -> str:
     
     return decrypted.decode('utf-8')
 
-DEFAULT_API_KEYS = [
-    "AIzaSyBfEzZIWSPv-MlZz0rPD_fmtYI6Wp-0EvQ",
-    "AIzaSyDsl7gkK_KZqG9mQMJid5No4-jHezya1RM",
-    "AIzaSyAQRHS57fgyVFUBTZtB-UzeOurM6RJaImw",
-    "AIzaSyDb9pzkKkme8GOINyB-MyOIAyQg9AzbKcw",
-    "AIzaSyAjrqDlWaEYYh7L3CyYLKNI0FQWPIv1sVo",
-    "AIzaSyCK5aGbuJiATTIx0N8b7O0gbMedKeLvhgY",
-    "AIzaSyBp5L12HgUkimutOCbryjVlUxBAxmMB3Zs",
-    "AIzaSyA-HotvV6FUepPC-uqnqlYbfiIg2ApvXnA"
-]
-
 def load_keys() -> list[str]:
     global decrypted_keys
     if decrypted_keys is not None:
         return decrypted_keys
 
-    # Priority 1: Check environment comma-separated array
+    # Read keys from environment
     env_keys = os.getenv('GEMINI_API_KEYS')
     if env_keys:
         decrypted_keys = [k.strip() for k in env_keys.split(',') if k.strip()]
+        print(f"[KeyManager] [SUCCESS] Successfully loaded {len(decrypted_keys)} API keys for rotation.")
         return decrypted_keys
-        
-    # Priority 2: Use provided defaults
-    decrypted_keys = DEFAULT_API_KEYS
-    print(f"[KeyManager] [SUCCESS] Successfully loaded {len(decrypted_keys)} API keys for rotation.")
-    return decrypted_keys
+    
+    raise ValueError("GEMINI_API_KEYS environment variable is missing or empty. Please set it securely in your .env.local file.")
 
 def get_next_api_key() -> str:
     global current_index
