@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://articleforge.com'; // Change back to real domain
+  const baseUrl = 'https://www.technify.space'; // Change back to real domain
   
   // Static Routes
   const routes = [
