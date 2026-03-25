@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "230793351041",
+    "firebase_url": "https://ramy-3412a.firebaseio.com",
+    "project_id": "ramy-3412a",
+    "storage_bucket": "ramy-3412a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230793351041:android:e3ff512068c945d5b72280",
+        "android_client_info": {
+          "package_name": "RamyRa.r"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBuRBY21-K8tOUMcnjfGbETnNV78MbftE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

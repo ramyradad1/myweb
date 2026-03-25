@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://articleforge.com';
+  const baseUrl = 'https://www.technify.space';
 
   return {
     rules: {

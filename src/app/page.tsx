@@ -6,38 +6,7 @@ import styles from './page.module.css';
 import ArticleCard from '@/components/ArticleCard';
 import { supabase } from '@/lib/supabase';
 
-const fallbackArticles = [
-  {
-    id: '1',
-    title: 'The Future of Artificial Intelligence in 2026 and Beyond',
-    excerpt: 'Explore how large language models are reshaping the tech landscape and how you can leverage them to maximize productivity in your daily workflow.',
-    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&q=80',
-    category: 'Technology',
-    date: 'March 24, 2026',
-    readTime: '5 min read',
-    slug: 'future-of-ai-2026'
-  },
-  {
-    id: '2',
-    title: 'Top SEO Strategies for the US Market',
-    excerpt: 'A comprehensive guide covering the most critical Google ranking factors, and how to outpace the competition using state-of-the-art editorial structures.',
-    imageUrl: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=500&q=80',
-    category: 'Marketing',
-    date: 'March 22, 2026',
-    readTime: '8 min read',
-    slug: 'seo-strategies-us-market'
-  },
-  {
-    id: '3',
-    title: 'The Independent Professional\'s Guide to Wealth Building',
-    excerpt: 'Discover the best global platforms for independent consultants, and learn how to market your services attractively to high-budget enterprise clients.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&q=80',
-    category: 'Business',
-    date: 'March 20, 2026',
-    readTime: '6 min read',
-    slug: 'freelancers-guide-increase-income'
-  }
-];
+
 
 interface Article {
   id: string;
@@ -51,7 +20,7 @@ interface Article {
 }
 
 export default function Home() {
-  const [latestArticles, setLatestArticles] = useState<Article[]>(fallbackArticles);
+  const [latestArticles, setLatestArticles] = useState<Article[]>([]);
 
   useEffect(() => {
     const fetchLatest = async () => {
@@ -90,7 +59,6 @@ export default function Home() {
         }
       } catch (err) {
         console.error('Failed to fetch latest articles:', err);
-        // Keep fallback data
       }
     };
     fetchLatest();

@@ -16,38 +16,7 @@ interface Article {
   slug: string;
 }
 
-const fallbackArticles: Article[] = [
-  {
-    id: '1',
-    title: 'The Future of Artificial Intelligence in 2026 and Beyond',
-    excerpt: 'Explore how large language models are reshaping the tech landscape and how you can leverage them to maximize productivity.',
-    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500&q=80',
-    category: 'Technology',
-    date: 'March 24, 2026',
-    readTime: '5 min read',
-    slug: 'future-of-ai-2026'
-  },
-  {
-    id: '2',
-    title: 'Top SEO Strategies for the US Market',
-    excerpt: 'A comprehensive guide covering the most critical Google ranking factors for 2026.',
-    imageUrl: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=500&q=80',
-    category: 'Marketing',
-    date: 'March 22, 2026',
-    readTime: '8 min read',
-    slug: 'seo-strategies-us-market'
-  },
-  {
-    id: '3',
-    title: 'The Independent Professional\'s Guide to Wealth Building',
-    excerpt: 'Discover the best global platforms for independent consultants to grow revenue.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&q=80',
-    category: 'Business',
-    date: 'March 20, 2026',
-    readTime: '6 min read',
-    slug: 'freelancers-guide-increase-income'
-  }
-];
+
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -93,13 +62,13 @@ export default function ArticlesPage() {
           setArticles(loaded);
           setFiltered(loaded);
         } else {
-          setArticles(fallbackArticles);
-          setFiltered(fallbackArticles);
+          setArticles([]);
+          setFiltered([]);
         }
       } catch (err) {
         console.error('Failed to fetch articles:', err);
-        setArticles(fallbackArticles);
-        setFiltered(fallbackArticles);
+        setArticles([]);
+        setFiltered([]);
       } finally {
         setIsLoading(false);
       }
