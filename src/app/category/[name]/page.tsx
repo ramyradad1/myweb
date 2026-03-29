@@ -98,11 +98,34 @@ export default async function CategoryPage({ params }: Props) {
     }
   };
 
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': 'https://technify.space'
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': decodedName,
+        'item': `https://technify.space/category/${name}`
+      }
+    ]
+  };
+
   return (
     <div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
       />
       <header className={styles.pageHeader}>
         <div className="container">

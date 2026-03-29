@@ -231,11 +231,40 @@ export default async function ArticlePage({ params }: Props) {
     inLanguage: 'en-US'
   };
 
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': 'https://technify.space'
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': article.category,
+        'item': `https://technify.space/category/${encodeURIComponent(article.category.toLowerCase().replace(/\s+/g, '-'))}`
+      },
+      {
+        '@type': 'ListItem',
+        'position': 3,
+        'name': article.title,
+        'item': `https://technify.space/articles/${slug}`
+      }
+    ]
+  };
+
   return (
     <article className={styles.articleContainer}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
       />
       
       <header className={styles.articleHeader}>

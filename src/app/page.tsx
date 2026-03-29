@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import Link from 'next/link';
 import styles from './page.module.css';
 import ArticleCard from '@/components/ArticleCard';
@@ -16,6 +17,33 @@ interface Article {
 
 // Revalidate every 60 seconds so Google always sees fresh content
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: 'Technify | Premium Editorial & Global News',
+  description: 'A premier digital magazine delivering expert-curated news, insights, and analysis across technology, business, and health tailored for the modern professional.',
+  openGraph: {
+    title: 'Technify | Premium Editorial Excellence',
+    description: 'Expert-curated global news and technology insights.',
+    url: 'https://technify.space',
+    siteName: 'Technify',
+    images: [
+      {
+        url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&h=630&q=80',
+        width: 1200,
+        height: 630,
+        alt: 'Technify Editorial',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Technify | Premium Editorial',
+    description: 'A premier digital magazine delivering expert-curated analysis and insights.',
+    images: ['https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&h=630&q=80'],
+  },
+};
 
 async function getLatestArticles(): Promise<Article[]> {
   try {
@@ -59,8 +87,23 @@ async function getLatestArticles(): Promise<Article[]> {
 export default async function Home() {
   const latestArticles = await getLatestArticles();
 
+  const siteNavigationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SiteNavigationElement',
+    'hasPart': [
+      { '@type': 'WebPage', 'name': 'Articles', 'url': 'https://technify.space/articles' },
+      { '@type': 'WebPage', 'name': 'Technology', 'url': 'https://technify.space/category/Technology' },
+      { '@type': 'WebPage', 'name': 'Business', 'url': 'https://technify.space/category/Business' },
+      { '@type': 'WebPage', 'name': 'About Us', 'url': 'https://technify.space/about' }
+    ]
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavigationJsonLd) }}
+      />
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroBackground}></div>
