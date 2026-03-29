@@ -17,17 +17,18 @@ interface Article {
 }
 
 type Props = {
-  params: { name: string };
+  params: Promise<{ name: string }>;
 };
 
 // Dynamic Metadata for each category
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const decodedName = decodeURIComponent(params.name).replace(/-/g, ' ');
+  const { name } = await params;
+  const decodedName = decodeURIComponent(name).replace(/-/g, ' ');
   return {
     title: `${decodedName} Articles`,
     description: `Browse all ${decodedName} articles and news on Technify — expert-curated analysis and insights.`,
     alternates: {
-      canonical: `/category/${params.name}`,
+      canonical: `/category/${name}`,
     },
     openGraph: {
       title: `${decodedName} | Technify`,
@@ -79,8 +80,9 @@ async function getCategoryArticles(categoryName: string): Promise<Article[]> {
 }
 
 export default async function CategoryPage({ params }: Props) {
-  const decodedName = decodeURIComponent(params.name).replace(/-/g, ' ');
-  const articles = await getCategoryArticles(params.name);
+  const { name } = await params;
+  const decodedName = decodeURIComponent(name).replace(/-/g, ' ');
+  const articles = await getCategoryArticles(name);
 
   // JSON-LD for category page
   const jsonLd = {
@@ -88,7 +90,7 @@ export default async function CategoryPage({ params }: Props) {
     '@type': 'CollectionPage',
     name: `${decodedName} Articles`,
     description: `All ${decodedName} articles on Technify`,
-    url: `https://technify.space/category/${params.name}`,
+    url: `https://technify.space/category/${name}`,
     isPartOf: {
       '@type': 'WebSite',
       name: 'Technify',

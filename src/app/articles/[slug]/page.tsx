@@ -10,7 +10,7 @@ import { marked } from 'marked';
 
 // Define the expected params for Next.js App Router
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 // Fallback article logic (moved to server side)
@@ -141,7 +141,8 @@ async function getArticle(slug: string) {
 export async function generateMetadata(
   { params }: Props
 ): Promise<Metadata> {
-  const article = await getArticle(params.slug);
+  const { slug } = await params;
+  const article = await getArticle(slug);
   
   if (!article) {
     return {
@@ -157,12 +158,12 @@ export async function generateMetadata(
     category: article.category,
     keywords: [...article.tags, article.category, 'Technify'],
     alternates: {
-      canonical: `https://technify.space/articles/${params.slug}`,
+      canonical: `https://technify.space/articles/${slug}`,
     },
     openGraph: {
       title: article.title,
       description: article.metaDescription,
-      url: `https://technify.space/articles/${params.slug}`,
+      url: `https://technify.space/articles/${slug}`,
       siteName: 'Technify',
       images: [
         {
@@ -191,7 +192,8 @@ export async function generateMetadata(
 
 // Server Component
 export default async function ArticlePage({ params }: Props) {
-  const article = await getArticle(params.slug);
+  const { slug } = await params;
+  const article = await getArticle(slug);
 
   if (!article) {
     notFound();
@@ -221,7 +223,7 @@ export default async function ArticlePage({ params }: Props) {
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://technify.space/articles/${params.slug}`
+      '@id': `https://technify.space/articles/${slug}`
     },
     articleSection: article.category,
     keywords: article.tags.join(', '),
