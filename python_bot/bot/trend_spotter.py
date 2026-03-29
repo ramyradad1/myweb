@@ -1,80 +1,98 @@
-import os
 import time
+import threading
 from duckduckgo_search import DDGS
 from .logger import log_info
 from .seo_agent import load_dynamic_settings
 
-def get_ddg_region_code(country_name: str) -> str:
-    """Maps country names to DuckDuckGo region codes."""
-    mapping = {
-        "United States": "us-en",
-        "United Kingdom": "uk-en",
-        "Germany": "de-de",
-        "France": "fr-fr",
-        "Canada": "ca-en",
-        "Australia": "au-en",
-        "Egypt": "eg-ar",
-        "Saudi Arabia": "sa-ar",
-        "UAE": "ae-ar",
-        "Spain": "es-es",
-        "Italy": "it-it",
-        "India": "in-en",
-        "Brazil": "br-pt",
-        "Japan": "jp-jp",
-        "Mexico": "mx-es"
-    }
-    return mapping.get(country_name, "us-en")
+REGION_MAP = {
+    "us": "us-en",
+    "gb": "uk-en",
+    "de": "de-de",
+    "fr": "fr-fr",
+    "ca": "ca-en",
+    "au": "au-en",
+    "in": "in-en",
+    "br": "br-pt",
+    "es": "es-es",
+    "it": "it-it",
+    "jp": "jp-jp",
+    "kr": "kr-kr",
+    "mx": "mx-es",
+    "nl": "nl-nl",
+    "se": "se-sv",
+    "nz": "nz-en",
+    "sg": "sg-en",
+}
+
+
+import multiprocessing
+
+def _run_ddgs_news(regions, region_map, queue):
+    try:
+        from duckduckgo_search import DDGS
+        import time
+        results_list = []
+        with DDGS(timeout=10) as ddgs:
+            for region_code in regions:
+                ddg_region = region_map.get(region_code, "us-en")
+                time.sleep(2)
+                try:
+                    results = ddgs.news(
+                        "technology OR artificial intelligence OR web development",
+                        region=ddg_region,
+                        max_results=5,
+                    )
+                    if results:
+                        for r in results:
+                            results_list.append({
+                                "title": r.get("title", ""),
+                                "source": r.get("source", ""),
+                                "region": region_code,
+                            })
+                except Exception:
+                    continue
+        queue.put(results_list)
+    except Exception as e:
+        queue.put([])
 
 def analyze_breakout_trends():
     """
     Connects to DuckDuckGo News API to detect trending topics in the targeted geo-regions.
-    Fetches latest tech news per region and looks for overlapping/global trends.
     """
     settings = load_dynamic_settings()
-    regions = settings.get("target_regions", ["United States"])
-    
-    log_info(f"[Nerve Center | Trend Spotter] Pinging global trend metrics across {len(regions)} regions: {', '.join(regions)}")
-    
+    regions = settings.get("target_regions", ["us"])
+
+    log_info(f"[Trend Spotter] Pinging trends across {len(regions)} regions: {', '.join(regions)}")
+
     all_trends = []
     
-    try:
-        with DDGS() as ddgs:
-            for region in regions:
-                region_code = get_ddg_region_code(region)
-                log_info(f"   -> Scanning {region} ({region_code})...")
-                
-                # We add exponential backoff/delay to avoid DDGS rate limits (Weakness #7 fix)
-                time.sleep(2) 
-                
-                # Fetch recent news related to technology and AI
-                results = ddgs.news("technology OR artificial intelligence OR web development", region=region_code, max_results=5)
-                
-                if results:
-                    for r in results:
-                        all_trends.append({
-                            "title": r.get('title', ''),
-                            "source": r.get('source', ''),
-                            "region": region
-                        })
-    except Exception as e:
-        log_info(f"[Nerve Center | Trend Spotter] ML Error during trend extraction: {e}")
+    queue = multiprocessing.Queue()
+    p = multiprocessing.Process(target=_run_ddgs_news, args=(regions, REGION_MAP, queue))
+    p.daemon = True
+    p.start()
+    p.join(timeout=45)
+
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        log_info("[Trend Spotter] ⏰ تم تجاوز المهلة الزمنية (45 ثانية) وتم إنهاء العملية بالقوة. متابعة...")
+    else:
+        try:
+            all_trends = queue.get(timeout=2)
+        except Exception:
+            pass
+
+    if not all_trends:
+        log_info("[Trend Spotter] لا توجد تريندات جديدة اليوم.")
         return []
 
-    # Cross-Region Analysis: Find topics that are trending in MULTIPLE regions simultaneously
-    if not all_trends:
-        log_info("[Nerve Center | Trend Spotter] Search velocity is stable. No new breakouts detected.")
-        return []
-        
-    log_info(f"[Nerve Center | Trend Spotter] Extracted {len(all_trends)} fresh news items. Analyzing cross-region velocity...")
-    
-    # Simple NLP to find overlapping noun phrases or bigrams could go here.
-    # For now, we return the top trend from the primary region.
-    
-    top_trend = all_trends[0]
-    log_info(f"[Nerve Center | Trend Spotter] [ALERT] BREAKOUT TREND DETECTED: '{top_trend['title']}' (Trending in {top_trend['region']})")
-    log_info(f"[Nerve Center | Trend Spotter] Preemptively alerting the Writer Agent to aggregate sources and publish immediately.")
-    
+    log_info(f"[Trend Spotter] ✅ تم استخراج {len(all_trends)} خبر من {len(regions)} منطقة.")
+
+    top = all_trends[0]
+    log_info(f"[Trend Spotter] [ALERT] BREAKOUT: '{top['title']}' (Trending in {top['region']})")
+
     return all_trends
+
 
 if __name__ == "__main__":
     analyze_breakout_trends()

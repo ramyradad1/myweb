@@ -37,37 +37,63 @@ def rewrite_article(original_title: str, original_html: str,
                 rules_text += f"{i}. {rule}\n"
             
         prompt = f"""
-        You are a Senior Editor and highly professional SEO expert for a top-tier digital magazine (Technify).
-        Your task is to take the following article (which might be in any language) and rewrite it.
+        You are a veteran tech journalist with 15+ years writing for top publications.
+        You have a sharp, opinionated voice. You write like a real person — not a machine.
+        Your task: take this article and rewrite it as YOUR OWN original piece for Technify magazine.
         {translate_instructions}
-        The new article must be 100% unique and not sound like a literal translation or cheap spun content.
         
         Original Article (Title): {original_title}
         Original Content (HTML):
         {original_html}
 
-        Strict Instructions:
-        1. **Depth**: {depth_instructions} Change the flow of ideas if necessary, add a completely new hook/introduction, and a conclusion.
-        2. **Tone**: The tone must be {tone}.
-        3. **HTML Format**: The output MUST be clean HTML format (use <h2>, <h3>, <p>, <ul>, <blockquote> where appropriate). Do NOT include <html> or <body> tags.
-        4. **Keyword Density**: Focus smartly on the main topic without keyword stuffing.
+        === WRITING STYLE (CRITICAL — THIS IS THE MOST IMPORTANT PART) ===
+        You MUST write like a real human journalist. Follow these rules strictly:
+        - Use contractions naturally (don't, won't, it's, they're, that's)
+        - Vary your sentence length dramatically. Mix short punchy sentences with longer flowing ones.
+        - Start some sentences with "And", "But", "So", "Look," or "Here's the thing" — like a real writer would.
+        - Include personal opinions and mild editorial takes (e.g., "Frankly, this is long overdue")
+        - Use rhetorical questions occasionally (e.g., "But does any of this actually matter?")
+        - Avoid these AI giveaway phrases at ALL COSTS: "In today's rapidly evolving", "It's worth noting", "landscape", "paradigm", "delve", "crucial", "Moreover", "Furthermore", "In conclusion", "leveraging", "robust", "pivotal", "realm", "It is important to", "One might argue"
+        - Write like you're explaining to a smart friend over coffee, not presenting to a boardroom
+        - Use colloquial transitions: "Now,", "Thing is,", "The kicker?", "Here's where it gets interesting"
+        - Add a touch of humor or wit where appropriate
+        - DO NOT use bullet points excessively. Prefer flowing paragraphs with occasional lists.
+        - The opening paragraph should hook the reader with a bold statement, question, or surprising fact — NOT a generic introduction.
+        
+        === CONTENT RULES ===
+        1. **Depth**: {depth_instructions}
+        2. **Tone**: {tone}.
+        3. **HTML Format**: Use <h2>, <h3>, <p>, <ul>, <blockquote>. No <html> or <body> tags.
+        
+        === ADVANCED SEO (ADSENSE-READY — CRITICAL) ===
+        - Place the PRIMARY keyword naturally in the first 100 words, in at least ONE <h2>, and in the meta description.
+        - Use 2-4 <h2> subheadings and 1-2 <h3> subheadings. Each must be descriptive and contain related keywords.
+        - Write a UNIQUE, compelling meta description (120-155 chars) that contains the main keyword and a call-to-action.
+        - Use short paragraphs (2-4 sentences max). Break up walls of text.
+        - Add a Table of Contents hint: at the top, include a brief summary (2-3 sentences) of what the reader will learn.
+        - Include at least ONE <blockquote> with an expert opinion or key statistic.
+        - Internal linking: mention "Technify" or "our coverage" naturally 1-2 times to hint at being a real publication.
+        - Use semantic HTML: <strong> for emphasis, <em> for nuance — NOT for keyword stuffing.
+        - The article MUST be at least 800 words for AdSense eligibility.
+        - Add a clear, human-written conclusion paragraph that summarizes key takeaways (but DO NOT start with "In conclusion").
+        - NO thin content, NO duplicate paragraphs, NO filler text.
         {rules_text}
 
-        I need the output EXCLUSIVELY in a strict, valid JSON format containing the following fields:
+        Return output EXCLUSIVELY as strict, valid JSON:
         {{
-          "title": "A new, highly engaging, SEO-optimized title (max 60 chars)",
-          "slug": "url-slug-in-english-based-on-topic-with-hyphens",
-          "metaDescription": "An engaging meta description that encourages clicks (max 155 chars)",
-          "content": "The full rewritten article content in HTML format based on instructions above",
-          "category": "One appropriate category (e.g., Technology, Business, Health, AI)",
+          "title": "A punchy, engaging title a human editor would write (max 60 chars)",
+          "slug": "url-slug-in-english-with-hyphens",
+          "metaDescription": "A click-worthy meta description (max 155 chars)",
+          "content": "Full rewritten article in HTML",
+          "category": "One category (e.g., Technology, AI, Gadgets, Science)",
           "tags": ["tag1", "tag2", "tag3", "tag4"]
         }}
         
         CRITICAL JSON RULES:
         - Escape all internal double quotes inside strings with \\".
-        - Use single quotes for all HTML attributes in the content (e.g., <div class='wrapper'>).
-        - NEVER include literal newline characters inside JSON string values. Use \\n or format the HTML as a continuous single-line string.
-        - Return ONLY the raw JSON string. Do NOT wrap it in markdown block quotes like ```json.
+        - Use single quotes for HTML attributes (e.g., <div class='wrapper'>).
+        - NO literal newlines inside JSON string values. Use \\n or single-line strings.
+        - Return ONLY raw JSON. No markdown code blocks.
         """
 
         max_retries = 8
@@ -97,15 +123,11 @@ def rewrite_article(original_title: str, original_html: str,
                     
             except Exception as e:
                 error_str = str(e)
-                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                    log_info(f"[Rewriter Error]: Rate limit hit (429). Rotating API key automatically... ({attempt + 1}/{max_retries})")
-                    attempt += 1
-                    continue
-                else:
-                    log_info(f"[Rewriter Error]: {error_str}")
-                    return None
+                log_info(f"[Rewriter Error]: API Error '{error_str}'. Rotating API key automatically... ({attempt + 1}/{max_retries})")
+                attempt += 1
+                continue
                     
-        log_info("[Rewriter Error]: Exhausted all available API keys due to rate limitations.")
+        log_info("[Rewriter Error]: Exhausted all available API keys or retries.")
         return None
 
     except Exception as e:

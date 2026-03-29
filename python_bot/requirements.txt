@@ -2,6 +2,7 @@ fastapi
 uvicorn
 requests
 beautifulsoup4
+lxml
 google-genai
 supabase
 apscheduler
@@ -12,3 +13,8 @@ httpx
 python-multipart
 cloudscraper>=1.2.71
 curl_cffi>=0.14.0
+numpy
+pandas
+scikit-learn
+flask
+duckduckgo-search

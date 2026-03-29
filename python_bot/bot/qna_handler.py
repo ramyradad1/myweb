@@ -45,20 +45,28 @@ def generate_solution_article(problem: dict) -> dict | None:
     - ONLY return raw JSON without markdown blocks like ```json.
     """
     
-    api_key = get_next_api_key()
-    if not api_key:
-        return None
-        
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        response_text = response.text.replace('```json', '').replace('```', '').strip()
-        parsed = json.loads(response_text)
-        log_info(f"[QnA Handler] Successfully analyzed and solved problem: '{parsed.get('title')}'")
-        return parsed
-    except Exception as e:
-        log_info(f"[QnA Handler] Engine failed to solve problem: {e}")
-        return None
+    max_retries = 8
+    attempt = 0
+    while attempt < max_retries:
+        api_key = get_next_api_key()
+        if not api_key:
+            return None
+            
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            response_text = response.text.replace('```json', '').replace('```', '').strip()
+            parsed = json.loads(response_text)
+            log_info(f"[QnA Handler] Successfully analyzed and solved problem: '{parsed.get('title')}'")
+            return parsed
+        except Exception as e:
+            error_str = str(e)
+            log_info(f"[QnA Handler] Engine failed to solve problem: '{error_str}'. Rotating key... ({attempt+1}/{max_retries})")
+            attempt += 1
+            continue
+            
+    log_info("[QnA Handler] Exhausted all API keys or retries.")
+    return None
 
 if __name__ == "__main__":
     mock_problem = {"title": "Test Error 404", "body": "My page constantly shows 404.", "source": "Web"}

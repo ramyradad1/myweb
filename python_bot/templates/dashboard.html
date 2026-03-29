@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nerve Center - AI Command Bridge</title>
+    <title>مركز التحكم - الذكاء الاصطناعي</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -45,11 +45,24 @@
         .btn-block{width:100%;margin-top:12px}
         .btn-sm{font-size:11px;padding:6px 12px}
         .btn-sm-success{font-size:11px;padding:6px 12px;background:var(--success);color:#fff;margin-right:6px}
-        .btn-sm-danger{font-size:11px;padding:6px 12px;background:var(--danger);color:#fff}
-        .btn-run{font-size:16px;padding:14px 48px}
-        .btn-save{font-size:16px;padding:16px;margin-top:8px;margin-bottom:32px}
-        .module-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .module-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;transition:all .2s}
+        .btn-run{font-size:18px;padding:16px 48px}
+        .btn-stop{font-size:18px;padding:16px 48px;background:var(--danger);border:none;border-radius:12px;color:#fff;cursor:pointer;font-family:inherit;font-weight:700;transition:all .3s}
+        .btn-stop:hover{background:#dc2626;transform:translateY(-2px)}
+        .btn-stop:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .launch-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+        .bot-status{margin-top:12px;padding:10px 20px;border-radius:10px;font-weight:700;text-align:center;font-size:14px}
+        .bot-status.idle{color:var(--text3);background:rgba(255,255,255,0.03)}
+        .bot-status.running{color:var(--success);background:rgba(16,185,129,0.1);animation:pulse-status 2s ease-in-out infinite}
+        .bot-status.stopping{color:var(--warning);background:rgba(245,158,11,0.1)}
+        @keyframes pulse-status{0%,100%{opacity:1}50%{opacity:.6}}
+        .run-output{margin-top:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;font-family:'Courier New',monospace;font-size:12px;color:var(--success);white-space:pre-wrap;max-height:400px;overflow-y:auto;display:none}
+        .log-line-ok{color:var(--success)}
+        .log-line-err{color:var(--danger)}
+        .log-line-skip{color:var(--text3)}
+        .log-line-step{color:var(--primary);font-weight:700}
+        .log-line-run{color:var(--warning)}
+        .module-grid{display:flex;flex-direction:column;gap:10px}
+        .module-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
         .module-item:hover{border-color:var(--primary)}
         .module-info{flex:1}
         .module-name{font-size:13px;font-weight:600;color:var(--text)}
@@ -78,12 +91,29 @@
         .pub-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
         .seo-spacing{margin-top:14px}
         .geo-hint{font-size:12px;color:var(--text3);margin-bottom:12px}
+        .source-section{margin-bottom:20px}
+        .source-section h4{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+        .source-icon{font-size:16px}
+        .source-list{display:flex;flex-direction:column;gap:6px}
+        .source-item{display:flex;align-items:center;gap:8px}
+        .source-item input{flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit}
+        .source-item input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+        .btn-icon{width:32px;height:32px;border:none;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+        .btn-icon-add{background:var(--primary);color:#fff}
+        .btn-icon-add:hover{background:#4f46e5}
+        .btn-icon-remove{background:rgba(239,68,68,0.15);color:var(--danger)}
+        .btn-icon-remove:hover{background:rgba(239,68,68,0.3)}
+        .source-add-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+        .source-add-row input{flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit}
+        .source-add-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+        .scraping-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+        @media(max-width:1100px){.scraping-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
     <div class="topbar">
-        <h1>Nerve Center - AI Command Bridge</h1>
-        <div class="status">System Online | {{ now }}</div>
+        <h1>مجلس القيادة الذكي - Nerve Center</h1>
+        <div class="status">النظام يعمل | {{ now }}</div>
     </div>
 
     <div class="container">
@@ -91,29 +121,31 @@
         <div class="quick-stats">
             <div class="stat">
                 <div class="stat-value">{{ settings.daily_article_quota }}</div>
-                <div class="stat-label">Articles/Day</div>
+                <div class="stat-label">مقال باليوم</div>
             </div>
             <div class="stat">
                 <div class="stat-value">{{ settings.scheduler_interval_hours }}h</div>
-                <div class="stat-label">Run Interval</div>
+                <div class="stat-label">تكرار التشغيل</div>
             </div>
             <div class="stat">
                 <div class="stat-value">{{ settings.modules.values()|select|list|length }}</div>
-                <div class="stat-label">Active Modules</div>
+                <div class="stat-label">الوحدات المفعلة</div>
             </div>
             <div class="stat">
                 <div class="stat-value">{{ settings.target_regions|length }}</div>
-                <div class="stat-label">Target Regions</div>
+                <div class="stat-label">الدول المستهدفة</div>
             </div>
         </div>
 
         <!-- Run Button -->
         <div class="card launch-card">
-            <h2 class="launch-title">Launch Nerve Center</h2>
-            <p class="launch-desc">Execute the full autonomous AI pipeline (all enabled modules)</p>
-            <button class="btn btn-primary btn-run" onclick="runNerveCenter()" id="runBtn">
-                Run Now
-            </button>
+            <h2 class="launch-title">تشغيل النشر الذاتي</h2>
+            <p class="launch-desc">أطلق دورة الذكاء الاصطناعي الكاملة للبحث والكتابة والنشر (حسب الوحدات المفعلة)</p>
+            <div class="launch-btns">
+                <button class="btn btn-primary btn-run" onclick="startBot()" id="startBtn">▶ ابدأ التشغيل</button>
+                <button class="btn-stop" onclick="stopBot()" id="stopBtn" disabled>⛔ إيقاف البوت</button>
+            </div>
+            <div class="bot-status idle" id="botStatus">البوت متوقف — جاهز للتشغيل</div>
             <div class="run-output" id="runOutput"></div>
         </div>
 
@@ -123,16 +155,16 @@
                 <!-- Publishing Controls -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">Publishing Controls</span>
-                        <span class="phase-badge">Core</span>
+                        <span class="card-title">إعدادات النشر الدورية</span>
+                        <span class="phase-badge">أساسي</span>
                     </div>
                     <div class="pub-grid">
                         <div>
-                            <label for="daily_article_quota">Articles Per Day</label>
+                            <label for="daily_article_quota">عدد المقالات باليوم</label>
                             <input type="number" id="daily_article_quota" title="Number of articles to publish per day" placeholder="3" value="{{ settings.daily_article_quota }}" min="1" max="50">
                         </div>
                         <div>
-                            <label for="scheduler_interval_hours">Run Every (Hours)</label>
+                            <label for="scheduler_interval_hours">تكرار التشغيل (بالساعات)</label>
                             <input type="number" id="scheduler_interval_hours" title="How often the bot runs in hours" placeholder="6" value="{{ settings.scheduler_interval_hours }}" min="1" max="24">
                         </div>
                     </div>
@@ -141,21 +173,21 @@
                 <!-- SEO Parameters -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">SEO Parameters</span>
-                        <span class="phase-badge">ML Engine</span>
+                        <span class="card-title">معايير وخصائص السيو (SEO)</span>
+                        <span class="phase-badge">أساسي</span>
                     </div>
                     <div>
-                        <label for="target_word_count">Target Word Count: <span id="wcVal">{{ settings.target_word_count }}</span></label>
+                        <label for="target_word_count">عدد الكلمات المستهدف: <span id="wcVal">{{ settings.target_word_count }}</span></label>
                         <input type="range" id="target_word_count" title="Target word count for articles" placeholder="1500" min="500" max="3000" step="50" value="{{ settings.target_word_count }}" oninput="document.getElementById('wcVal').textContent=this.value">
                         <div class="range-labels"><span>500</span><span>1500</span><span>3000</span></div>
                     </div>
                     <div class="seo-spacing">
-                        <label for="target_image_count">Target Image Count: <span id="imgVal">{{ settings.target_image_count }}</span></label>
+                        <label for="target_image_count">عدد الصور المستهدف: <span id="imgVal">{{ settings.target_image_count }}</span></label>
                         <input type="range" id="target_image_count" title="Target number of images per article" placeholder="3" min="0" max="15" value="{{ settings.target_image_count }}" oninput="document.getElementById('imgVal').textContent=this.value">
                         <div class="range-labels"><span>0</span><span>7</span><span>15</span></div>
                     </div>
                     <div class="seo-spacing">
-                        <label for="target_keyword_density">Keyword Density %: <span id="kdVal">{{ settings.target_keyword_density }}</span></label>
+                        <label for="target_keyword_density">الكثافة المفتاحية المتوقعة %: <span id="kdVal">{{ settings.target_keyword_density }}</span></label>
                         <input type="range" id="target_keyword_density" title="Target keyword density percentage" placeholder="2.5" min="0.5" max="8" step="0.5" value="{{ settings.target_keyword_density }}" oninput="document.getElementById('kdVal').textContent=this.value">
                         <div class="range-labels"><span>0.5%</span><span>4%</span><span>8%</span></div>
                     </div>
@@ -164,10 +196,10 @@
                 <!-- Geo Targeting -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">Geo-Targeting Regions</span>
-                        <span class="phase-badge">Trends</span>
+                        <span class="card-title">الدول المستهدفة (أسواق التريندات)</span>
+                        <span class="phase-badge">تريندات</span>
                     </div>
-                    <p class="geo-hint">Select countries to monitor for trending topics. The Trend Spotter and Competitor Monitor will focus on these markets.</p>
+                    <p class="geo-hint">اضغط لاختيار الدول التي سيقوم البوت بمراقبة مواضيعها الرائجة لكتابة مقالات عنها استباقياً.</p>
                     <div class="region-grid" id="regionGrid">
                         {% for code, name in regions.items() %}
                         <div class="region-chip {% if code in settings.target_regions %}active{% endif %}" data-region="{{ code }}" onclick="toggleRegion(this)">
@@ -180,15 +212,15 @@
                 <!-- Memory & Audit -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">Recent Bot Memory</span>
-                        <span class="phase-badge">Phase 9</span>
+                        <span class="card-title">ذاكرة البوت الحية (القرارات السابقة)</span>
+                        <span class="phase-badge">ذكاء اصطناعي</span>
                     </div>
                     <div class="log-box">
                         {% for entry in memory %}
                         <div class="log-entry">[{{ entry.timestamp[:16] }}] {{ entry.action }} -> {{ entry.result }}</div>
                         {% endfor %}
                         {% if not memory %}
-                        <div class="log-entry log-muted">No memory entries yet. Run the Nerve Center to start learning.</div>
+                        <div class="log-entry log-muted">لا يوجد ذكريات مسجلة بعد. سيقوم البوت بالتخزين هنا ليتعلم من أخطائه...</div>
                         {% endif %}
                     </div>
                 </div>
@@ -198,10 +230,10 @@
             <div>
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">Module Control ({{ modules|length }} Modules)</span>
+                        <span class="card-title">التحكم بوحدات الذكاء الاصطناعي ({{ modules|length }} وحدة)</span>
                         <div>
-                            <button class="btn btn-sm-success" onclick="toggleAll(true)">All ON</button>
-                            <button class="btn btn-sm-danger" onclick="toggleAll(false)">All OFF</button>
+                            <button class="btn btn-sm-success" onclick="toggleAll(true)">تشغيل الكل</button>
+                            <button class="btn btn-sm-danger" onclick="toggleAll(false)">إيقاف الكل</button>
                         </div>
                     </div>
                     <div class="module-grid" id="moduleGrid">
@@ -223,16 +255,75 @@
                 <!-- Audit Log -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">Audit Trail</span>
-                        <span class="phase-badge">Phase 10</span>
+                        <span class="card-title">سجل إجراءات البوت (تاريخ العمليات)</span>
+                        <span class="phase-badge">شفافية</span>
                     </div>
                     <div class="log-box">
                         {% for entry in audit %}
-                        <div class="log-entry">[{{ entry.Timestamp[:16] }}] [{{ entry.Module }}] {{ entry.Action }} -> {{ entry.Result }}</div>
+                        <div class="log-entry">[{{ entry.Timestamp[:16] }}] [{{ entry.Module }}] {{ entry.Action }} -> <strong class="{% if entry.Result == 'SUCCESS' %}text-success{% elif entry.Result == 'ERROR' %}text-danger{% endif %}">{{ entry.Result }}</strong></div>
                         {% endfor %}
                         {% if not audit %}
-                        <div class="log-entry log-muted">No audit entries yet.</div>
+                        <div class="log-entry log-muted">لا توجد عمليات مسجلة بعد...</div>
                         {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scraping Sources -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">مصادر سحب وتوليد المحتوى (المنافسون والمجتمع)</span>
+                <span class="phase-badge">مباشر</span>
+            </div>
+            <p class="geo-hint">حدد المواقع والمنتديات ومصادر الأخبار التي يحللها البوت ليسرق منها الأفكار ويصوغ منها محتوى حصري وفريد لموقعك.</p>
+            <div class="scraping-grid">
+                <!-- Competitor Sitemaps -->
+                <div class="source-section">
+                    <h4><span class="source-icon">🌐</span> خرائط مواقع المنافسين</h4>
+                    <div class="source-list" id="competitorList">
+                        {% for url in settings.scraping_sources.competitor_sitemaps %}
+                        <div class="source-item">
+                            <input type="text" value="{{ url }}" title="Competitor URL" placeholder="https://example.com">
+                            <button class="btn-icon btn-icon-remove" onclick="this.parentElement.remove()" title="Remove">✕</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="source-add-row">
+                        <input type="text" id="newCompetitor" placeholder="https://competitor.com" title="New competitor URL">
+                        <button class="btn-icon btn-icon-add" onclick="addSource('competitorList','newCompetitor')" title="Add">+</button>
+                    </div>
+                </div>
+                <!-- Reddit Subreddits -->
+                <div class="source-section">
+                    <h4><span class="source-icon">🤖</span> منتديات ريديت (Reddit)</h4>
+                    <div class="source-list" id="redditList">
+                        {% for sub in settings.scraping_sources.reddit_subreddits %}
+                        <div class="source-item">
+                            <input type="text" value="{{ sub }}" title="Subreddit" placeholder="r/technology">
+                            <button class="btn-icon btn-icon-remove" onclick="this.parentElement.remove()" title="Remove">✕</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="source-add-row">
+                        <input type="text" id="newReddit" placeholder="r/subreddit" title="New subreddit">
+                        <button class="btn-icon btn-icon-add" onclick="addSource('redditList','newReddit')" title="Add">+</button>
+                    </div>
+                </div>
+                <!-- RSS Feeds -->
+                <div class="source-section">
+                    <h4><span class="source-icon">📡</span> خلاصات (RSS Feeds) الأخبار</h4>
+                    <div class="source-list" id="rssList">
+                        {% for feed in settings.scraping_sources.rss_feeds %}
+                        <div class="source-item">
+                            <input type="text" value="{{ feed }}" title="RSS Feed URL" placeholder="https://example.com/rss.xml">
+                            <button class="btn-icon btn-icon-remove" onclick="this.parentElement.remove()" title="Remove">✕</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="source-add-row">
+                        <input type="text" id="newRss" placeholder="https://example.com/feed.xml" title="New RSS feed URL">
+                        <button class="btn-icon btn-icon-add" onclick="addSource('rssList','newRss')" title="Add">+</button>
                     </div>
                 </div>
             </div>
@@ -240,7 +331,7 @@
 
         <!-- Save Button -->
         <button class="btn btn-primary btn-block btn-save" onclick="saveAll()">
-            Save All Settings
+            💾 حفظ جميع الإعدادات الحالية
         </button>
     </div>
 
@@ -263,6 +354,27 @@
             document.querySelectorAll('#moduleGrid input[type=checkbox]').forEach(cb => cb.checked = state);
         }
 
+        function addSource(listId, inputId) {
+            const input = document.getElementById(inputId);
+            const val = input.value.trim();
+            if (!val) return;
+            const list = document.getElementById(listId);
+            const div = document.createElement('div');
+            div.className = 'source-item';
+            div.innerHTML = `<input type="text" value="${val}" title="Source URL" placeholder="URL"><button class="btn-icon btn-icon-remove" onclick="this.parentElement.remove()" title="Remove">✕</button>`;
+            list.appendChild(div);
+            input.value = '';
+        }
+
+        function collectSourceList(listId) {
+            const items = [];
+            document.querySelectorAll('#' + listId + ' .source-item input').forEach(inp => {
+                const v = inp.value.trim();
+                if (v) items.push(v);
+            });
+            return items;
+        }
+
         function collectSettings() {
             const modules = {};
             document.querySelectorAll('#moduleGrid input[type=checkbox]').forEach(cb => {
@@ -281,7 +393,12 @@
                 target_image_count: document.getElementById('target_image_count').value,
                 target_keyword_density: document.getElementById('target_keyword_density').value,
                 target_regions: regions,
-                modules: modules
+                modules: modules,
+                scraping_sources: {
+                    competitor_sitemaps: collectSourceList('competitorList'),
+                    reddit_subreddits: collectSourceList('redditList'),
+                    rss_feeds: collectSourceList('rssList')
+                }
             };
         }
 
@@ -293,38 +410,114 @@
                     body: JSON.stringify(collectSettings())
                 });
                 const data = await res.json();
-                showToast(data.message || 'Saved!', 'success');
+                showToast(data.message || 'تم الحفظ بنجاح!', 'success');
             } catch(e) {
-                showToast('Save failed: ' + e.message, 'error');
+                showToast('فشل الحفظ: ' + e.message, 'error');
             }
         }
 
-        async function runNerveCenter() {
-            const btn = document.getElementById('runBtn');
+        let evtSource = null;
+
+        function colorLog(line) {
+            if (line.includes('✅')) return '<span class="log-line-ok">' + line + '</span>';
+            if (line.includes('❌') || line.includes('ERROR') || line.includes('فشلت')) return '<span class="log-line-err">' + line + '</span>';
+            if (line.includes('تخطي') || line.includes('SKIP')) return '<span class="log-line-skip">' + line + '</span>';
+            if (line.includes('━━')) return '<span class="log-line-step">' + line + '</span>';
+            if (line.includes('▶') || line.includes('جاري')) return '<span class="log-line-run">' + line + '</span>';
+            return line;
+        }
+
+        function updateUI(running, stopping) {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const status = document.getElementById('botStatus');
+            if (running) {
+                startBtn.disabled = true;
+                stopBtn.disabled = stopping;
+                if (stopping) {
+                    status.className = 'bot-status stopping';
+                    status.textContent = 'جاري الإيقاف...';
+                } else {
+                    status.className = 'bot-status running';
+                    status.textContent = '🟢 البوت يعمل الآن...';
+                }
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                status.className = 'bot-status idle';
+                status.textContent = 'البوت متوقف — جاهز للتشغيل';
+            }
+        }
+
+        async function startBot() {
             const output = document.getElementById('runOutput');
-            btn.textContent = 'Running...';
-            btn.disabled = true;
             output.style.display = 'block';
-            output.textContent = '[ Initializing Nerve Center... ]\n';
+            output.innerHTML = '';
 
             try {
-                const res = await fetch('/api/run', { method: 'POST' });
+                const res = await fetch('/api/start', { method: 'POST' });
                 const data = await res.json();
-                if (data.status === 'ok') {
-                    output.textContent = data.output;
-                    showToast('Nerve Center cycle completed!', 'success');
-                } else {
-                    output.textContent = 'ERROR: ' + data.message;
-                    showToast('Error: ' + data.message, 'error');
+                if (data.status === 'error') {
+                    showToast(data.message, 'error');
+                    return;
                 }
+                showToast('تم تشغيل البوت!', 'success');
+                updateUI(true, false);
+                startLogStream();
             } catch(e) {
-                output.textContent = 'NETWORK ERROR: ' + e.message;
-                showToast('Network error', 'error');
-            } finally {
-                btn.textContent = 'Run Now';
-                btn.disabled = false;
+                showToast('خطأ في الاتصال: ' + e.message, 'error');
             }
         }
+
+        async function stopBot() {
+            try {
+                const res = await fetch('/api/stop', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.message, data.status === 'ok' ? 'success' : 'error');
+                updateUI(true, true);
+            } catch(e) {
+                showToast('خطأ: ' + e.message, 'error');
+            }
+        }
+
+        function startLogStream() {
+            if (evtSource) evtSource.close();
+            evtSource = new EventSource('/api/logs');
+            const output = document.getElementById('runOutput');
+
+            evtSource.onmessage = function(e) {
+                try {
+                    const msg = JSON.parse(e.data);
+                    if (msg.log) {
+                        output.innerHTML += colorLog(msg.log) + '\n';
+                        output.scrollTop = output.scrollHeight;
+                    }
+                    if (msg.status !== undefined) {
+                        updateUI(msg.status, msg.stop_requested);
+                        if (!msg.status && evtSource) {
+                            // Bot finished or stopped
+                            evtSource.close();
+                            evtSource = null;
+                        }
+                    }
+                } catch(err) {}
+            };
+
+            evtSource.onerror = function() {
+                if (evtSource) evtSource.close();
+                evtSource = null;
+                updateUI(false, false);
+            };
+        }
+
+        // Check initial status on page load
+        fetch('/api/status').then(r => r.json()).then(data => {
+            updateUI(data.running, data.stop_requested);
+            if (data.running) {
+                document.getElementById('runOutput').style.display = 'block';
+                startLogStream();
+            }
+        }).catch(()=>{});
     </script>
 </body>
 </html>

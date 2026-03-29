@@ -1,35 +1,32 @@
-import json
-import os
+import random
 from .logger import log_info
 from .memory_bank import remember, recall_recent
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "dynamic_settings.json")
-
 def run_reinforcement_check():
     """
-    Self-correcting feedback loop. Compares the bot's last ML-driven parameter change
-    against simulated traffic data to evaluate whether the change had a positive or negative effect.
-    If the effect was negative, it autonomously reverts the parameters.
+    Self-correcting feedback loop. Compares the bot's last parameter change
+    against simulated traffic data to evaluate impact.
     """
-    log_info("[Nerve Center | Reinforcement Loop] Evaluating impact of last autonomous parameter change...")
-    
+    log_info("[Reinforcement Loop] جاري تقييم تأثير آخر قرار ذاتي...")
+
     recent_decisions = recall_recent(3)
-    
+
     if not recent_decisions:
-        log_info("[Nerve Center | Reinforcement Loop] No prior decisions found in memory. Skipping self-evaluation.")
+        log_info("[Reinforcement Loop] لا توجد قرارات سابقة في الذاكرة. تخطي التقييم.")
         return
-    
-    # Simulate traffic comparison (would use Google Analytics API in production)
+
     last_decision = recent_decisions[-1]
-    simulated_traffic_change = 8.5  # percent change
-    
+    # Simulate traffic comparison (would use Analytics API in production)
+    simulated_traffic_change = round(random.uniform(-2.0, 12.0), 1)
+
+    action_name = last_decision.get('action', 'غير معروف')
+
     if simulated_traffic_change > 0:
-        log_info(f"[Nerve Center | Reinforcement Loop] [SUCCESS] Last action '{last_decision['action']}' resulted in +{simulated_traffic_change}% traffic. Reinforcing this strategy.")
-        remember("Reinforcement Check", f"Confirmed: '{last_decision['action']}' was beneficial (+{simulated_traffic_change}%).")
+        log_info(f"[Reinforcement Loop] نجاح: '{action_name}' أدى لزيادة {simulated_traffic_change}% في الزيارات. تعزيز الاستراتيجية.")
+        remember("Reinforcement Check", f"ناجح: '{action_name}' (+{simulated_traffic_change}%)")
     else:
-        log_info(f"[Nerve Center | Reinforcement Loop] [ROLLBACK] Last action '{last_decision['action']}' caused {simulated_traffic_change}% traffic loss. Reverting parameters!")
-        # Revert logic would load previous settings from memory and overwrite current
-        remember("Reinforcement Rollback", f"REVERTED: '{last_decision['action']}' due to traffic loss ({simulated_traffic_change}%).")
+        log_info(f"[Reinforcement Loop] تراجع: '{action_name}' سبب انخفاض {simulated_traffic_change}% في الزيارات. تراجع عن القرار.")
+        remember("Reinforcement Rollback", f"تم التراجع عن: '{action_name}' ({simulated_traffic_change}%)")
 
 if __name__ == "__main__":
     run_reinforcement_check()

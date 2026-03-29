@@ -278,7 +278,7 @@ export default function AdminBotControl() {
                   <option value="English">English (US)</option>
                   <option value="Arabic">Arabic (العربية)</option>
                 </select>
-                <p className={styles.helpText} style={{marginBottom: "1.5rem"}}>Gemini will automatically translate scraped content from any source language exclusively to this selected language.</p>
+                <p className={styles.helpText}>Gemini will automatically translate scraped content from any source language exclusively to this selected language.</p>
               </div>
 
               <button 

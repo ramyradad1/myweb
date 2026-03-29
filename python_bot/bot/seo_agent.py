@@ -27,18 +27,29 @@ def save_dynamic_settings(settings: dict):
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=4, ensure_ascii=False)
 
+
+def _search_with_timeout(query: str, timeout_sec: int = 20) -> str:
+    """Run DDGS search synchronously (DDGS already supports timeout). Removed multiprocessing to fix Windows hangs."""
+    try:
+        from duckduckgo_search import DDGS
+        text = ""
+        with DDGS(timeout=timeout_sec) as ddgs:
+            results = list(ddgs.text(query, max_results=5))
+            for r in results:
+                text += f"Title: {r.get('title')}\nSnippet: {r.get('body')}\n\n"
+        return text
+    except Exception as e:
+        log_info(f"[SEO Agent] فشل البحث عبر DuckDuckGo: {e}")
+        return ""
+
 def search_web(query: str) -> str:
     """Perform a web search for the given query using DDGS or Serper."""
     results_text = ""
     if HAS_DDG:
-        try:
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=5))
-                for r in results:
-                    results_text += f"Title: {r.get('title')}\nSnippet: {r.get('body')}\n\n"
+        results_text = _search_with_timeout(query, timeout_sec=20)
+        if results_text.strip():
             return results_text
-        except Exception as e:
-            log_info(f"[SEO Agent] DDGS search failed: {e}")
+        log_info("[SEO Agent] DDGS returned no results, trying Serper fallback...")
             
     # Fallback to Serper API if DDG fails or isn't installed
     search_api_key = os.getenv("SERPER_API_KEY")
@@ -51,7 +62,7 @@ def search_web(query: str) -> str:
                 'X-API-KEY': search_api_key,
                 'Content-Type': 'application/json'
             }
-            response = requests.request("POST", url, headers=headers, data=payload)
+            response = requests.request("POST", url, headers=headers, data=payload, timeout=10)
             data = response.json()
             for r in data.get("organic", []):
                 results_text += f"Title: {r.get('title')}\nSnippet: {r.get('snippet')}\n\n"
@@ -93,26 +104,33 @@ def research_latest_seo_rules():
     Example: ["Do x", "Do y", "Do z"]
     """
     
-    api_key = get_next_api_key()
-    if not api_key:
-        log_info("[SEO Agent] No API keys available for research.")
-        return
-        
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        response_text = response.text.replace('```json', '').replace('```', '').strip()
-        new_rules = json.loads(response_text)
-        
-        if isinstance(new_rules, list) and len(new_rules) > 0:
-            settings = load_dynamic_settings()
-            settings["dynamic_seo_rules"] = new_rules
-            settings["last_seo_research_date"] = now.isoformat()
-            save_dynamic_settings(settings)
-            log_info(f"[SEO Agent] Successfully updated dynamic_settings.json with {len(new_rules)} new SEO rules.")
+    max_retries = 8
+    for attempt in range(max_retries):
+        api_key = get_next_api_key()
+        if not api_key:
+            log_info("[SEO Agent] No API keys available for research.")
+            return
             
-    except Exception as e:
-        log_info(f"[SEO Agent] Failed to extract SEO rules via LLM: {e}")
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            response_text = response.text.replace('```json', '').replace('```', '').strip()
+            new_rules = json.loads(response_text)
+            
+            if isinstance(new_rules, list) and len(new_rules) > 0:
+                settings = load_dynamic_settings()
+                settings["dynamic_seo_rules"] = new_rules
+                settings["last_seo_research_date"] = now.isoformat()
+                save_dynamic_settings(settings)
+                log_info(f"[SEO Agent] Successfully updated dynamic_settings.json with {len(new_rules)} new SEO rules.")
+                return
+                
+        except Exception as e:
+            error_str = str(e)
+            log_info(f"[SEO Agent] Failed to extract SEO rules: '{error_str}'. Rotating key... ({attempt + 1}/{max_retries})")
+            continue
+            
+    log_info("[SEO Agent] Exhausted all API keys or retries for SEO research.")
 
 if __name__ == "__main__":
     research_latest_seo_rules()

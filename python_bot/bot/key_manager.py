@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env.local")
 load_dotenv(env_path)
 
+# Also load the bot's own .env for bot-specific keys
+bot_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+load_dotenv(bot_env_path)
+
 decrypted_keys = None
 current_index = 0
 
@@ -33,18 +37,29 @@ def load_keys() -> list[str]:
     if decrypted_keys is not None:
         return decrypted_keys
 
-    # Read keys from environment
+    # Try GEMINI_API_KEYS first (comma-separated list)
     env_keys = os.getenv('GEMINI_API_KEYS')
     if env_keys:
         decrypted_keys = [k.strip() for k in env_keys.split(',') if k.strip()]
         print(f"[KeyManager] [SUCCESS] Successfully loaded {len(decrypted_keys)} API keys for rotation.")
         return decrypted_keys
     
-    raise ValueError("GEMINI_API_KEYS environment variable is missing or empty. Please set it securely in your .env.local file.")
+    # Fallback to single GEMINI_API_KEY_EXTRA
+    extra_key = os.getenv('GEMINI_API_KEY_EXTRA')
+    if extra_key:
+        decrypted_keys = [extra_key.strip()]
+        print(f"[KeyManager] [SUCCESS] Loaded 1 API key from GEMINI_API_KEY_EXTRA.")
+        return decrypted_keys
+    
+    print("[KeyManager] [WARNING] No Gemini API keys found. SEO Agent will use fallback mode.")
+    decrypted_keys = []
+    return decrypted_keys
 
-def get_next_api_key() -> str:
+def get_next_api_key() -> str | None:
     global current_index
     keys = load_keys()
+    if not keys:
+        return None
     key = keys[current_index]
     current_index = (current_index + 1) % len(keys)
     return key

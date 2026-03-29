@@ -11,11 +11,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://technify.space'),
   title: {
     default: "Technify | Premium Editorial & Global News",
     template: "%s | Technify"
   },
   description: "A premier digital magazine delivering expert-curated news, insights, and analysis across technology, business, and health.",
+  alternates: {
+    canonical: '/',
+  },
   robots: {
     index: true,
     follow: true,
@@ -28,9 +32,6 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'your-google-site-verification-code',
   },
   openGraph: {
     title: 'Technify | Premium Editorial',
@@ -52,6 +53,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // WebSite schema for sitelinks search box and organization identity
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Technify',
+    url: 'https://technify.space',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://technify.space/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
     <html lang="en" dir="ltr" className={inter.variable}>
       <head>
@@ -68,6 +82,10 @@ export default function RootLayout({
         }} />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <Navbar />
         <main className="main-content">
           {children}

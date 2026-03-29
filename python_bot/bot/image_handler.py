@@ -2,24 +2,18 @@ import os
 import uuid
 import time
 import requests
-import urllib.parse
+import hashlib
 from google import genai
 from google.genai import types
-from supabase import create_client, Client
+from .supabase_client import get_supabase_client as _get_sb_client
 from .key_manager import get_next_api_key
 from .logger import log_info
 from .state import GLOBAL_STOP_EVENT
 
 def upload_to_supabase(image_bytes: bytes, file_name: str) -> str:
     """Uploads binary image stream to Supabase Storage and enforces public URL returning."""
-    supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not supabase_url or not supabase_key:
-        log_info("[Image AI] Supabase credentials missing. Cannot deploy image to bucket.")
-        return ""
-    
     try:
-        supabase_client: Client = create_client(supabase_url, supabase_key)
+        supabase_client = _get_sb_client()
         bucket_name = "articles"
         
         # Push file to storage securely bypassing 401s
@@ -36,60 +30,74 @@ def upload_to_supabase(image_bytes: bytes, file_name: str) -> str:
         log_info(f"[Image AI] Deep Cloud injection failed targeting Supabase Storage: {e}")
         return ""
 
+def get_dynamic_placeholder(prompt: str) -> str:
+    """Generates a unique Pollinations.ai URL, downloads it, and uploads to Supabase."""
+    try:
+        seed = int(hashlib.md5(prompt.encode()).hexdigest(), 16) % 1000000
+        safe_prompt = requests.utils.quote(prompt[:200])
+        pollinations_url = f"https://pollinations.ai/p/{safe_prompt}?width=1024&height=576&seed={seed}&model=flux&nologo=true"
+        
+        log_info(f"[Image AI] Fetching dynamic asset: {pollinations_url[:60]}...")
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resp = requests.get(pollinations_url, headers=headers, timeout=30)
+        resp.raise_for_status()
+        
+        file_name = f"hero_fallback_{uuid.uuid4().hex}.jpg"
+        public_url = upload_to_supabase(resp.content, file_name)
+        
+        if public_url:
+            log_info(f"[Image AI] Dynamic asset synced to Supabase: {public_url}")
+            return public_url
+            
+        return pollinations_url # Last ditch URL return
+    except Exception as e:
+        log_info(f"[Image AI] Dynamic sync failed: {e}")
+        return "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200"
+
 def generate_flux_image(prompt: str) -> str:
-    """Generates an image via HuggingFace Inference API utilizing Flux.1."""
+    """Generates an image via HuggingFace Inference API utilizing Flux.1 with local fallback."""
     hf_token = os.getenv("HF_TOKEN")
     if not hf_token:
-        log_info("[Image AI] CRITICAL: 'HF_TOKEN' missing from .env. Images cannot be generated without an HF Token.")
-        return "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&q=80" # Temporary safe placeholder
+        log_info("[Image AI] 'HF_TOKEN' missing. Using dynamic placeholder...")
+        return get_dynamic_placeholder(prompt)
 
-    API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
-    headers = {"Authorization": f"Bearer {hf_token}"}
+    # Updated API logic for 2026 HuggingFace infrastructure
+    # Trying the 'router' or 'v1' endpoints if available, or direct model endpoint
+    API_URLS = [
+        f"https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+        f"https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+    ]
     
+    headers = {"Authorization": f"Bearer {hf_token}"}
     payload = {
         "inputs": prompt,
-        "parameters": {
-            "width": 1024,
-            "height": 576 # Cinematic 16:9 bounds for Tech magazine layout
-        }
+        "parameters": {"width": 1024, "height": 576}
     }
     
-    try:
-        log_info(f"[Image AI] Synthesizing asset natively via Hugging Face Flux...")
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
-        
-        # Cold boot defense algorithm (Hugging face proxy models sleep if inactive)
-        if response.status_code == 503 and "estimated_time" in response.text:
-            try:
-                delay = float(response.json().get("estimated_time", 15.0))
-                log_info(f"[Image AI] Deep model is currently booting on cloud hardware. Reserving compute for {delay:.1f}s...")
-                time.sleep(min(delay, 25)) # Lock upper limit to 25s latency protection
+    for api_url in API_URLS:
+        try:
+            log_info(f"[Image AI] Attempting synthesis via {api_url.split('/')[2]}...")
+            response = requests.post(api_url, headers=headers, json=payload, timeout=45)
+            
+            if response.status_code == 503:
+                log_info("[Image AI] Model is sleeping, waiting for boot...")
+                time.sleep(15)
+                response = requests.post(api_url, headers=headers, json=payload, timeout=45)
+
+            if response.status_code == 200:
+                image_bytes = response.content
+                file_name = f"hero_{uuid.uuid4().hex}.jpg"
+                public_url = upload_to_supabase(image_bytes, file_name)
+                if public_url: return public_url
                 
-                # Retry prompt
-                response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
-            except Exception as e:
-                log_info(f"[Image AI] Model wakeup cycle timed out: {e}")
+            log_info(f"[Image AI] API failed ({response.status_code}). Trying next...")
+        except Exception as e:
+            log_info(f"[Image AI] Connection error: {e}")
+            continue
 
-        # Final extraction
-        if response.status_code == 200:
-            image_bytes = response.content
-            file_name = f"hero_{uuid.uuid4().hex}.jpg"
-            log_info(f"[Image AI] Successfully generated authentic asset ({len(image_bytes)} bytes). Deploying to Supabase...")
-            
-            public_url = upload_to_supabase(image_bytes, file_name)
-            
-            if public_url:
-                log_info(f"[Image AI] Media successfully bridged onto local edge network: {public_url}")
-                return public_url
-            else:
-                log_info("[Image AI] Supabase injection faulted, resulting in blank proxy mapping.")
-        else:
-            log_info(f"[Image AI] HuggingFace API declined query: {response.text}")
-
-    except Exception as e:
-        log_info(f"[Image AI] FATAL: HuggingFace rendering sequence terminated unexpectedly: {e}")
-
-    return "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&q=80"
+    # Final robust fallback to Pollinations.ai (Never returns the same image twice for different titles)
+    log_info("[Image AI] All primary APIs failed. Deploying dynamic Pollinations fallback.")
+    return get_dynamic_placeholder(prompt)
 
 def analyze_and_generate_image(original_url: str, article_title: str) -> str:
     """Downloads original image, streams prompt through Gemini Vision, and renders Flux natively."""
@@ -103,31 +111,21 @@ def analyze_and_generate_image(original_url: str, article_title: str) -> str:
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
                 response = requests.get(original_url, headers=headers, timeout=10)
                 response.raise_for_status()
-                
-                content_type = response.headers.get('content-type', '')
-                if not content_type.startswith('image/'):
-                    content_type = 'image/jpeg'
-                    
                 image_bytes = response.content
+                content_type = response.headers.get('content-type', 'image/jpeg')
             except Exception as e:
-                log_info(f"[Image AI] Bounding box failure downloading original image {original_url}: {e}")
+                log_info(f"[Image AI] Failed to fetch source image: {e}")
         
-        # 2. Extract AI visual prompt logic via Gemini 2.5 Flash setup
-        max_retries = 8
+        # 2. Extract AI visual prompt logic
+        max_retries = 3
         attempt = 0
-        prompt_text = f"Analyze the article title: '{article_title}'. Write a highly detailed, professional English prompt (max 500 chars) that can be used in an AI image generator to create a highly modern, professional, 16:9 4k photographic style suitable for a tech magazine cover. Return ONLY the English prompt string, absolutely no other text."
+        prompt_text = f"Analyze the article title: '{article_title}'. Write an image generation prompt (max 400 chars) for a PHOTOREALISTIC, editorial-quality photograph that would accompany this article in a premium tech publication. The image should look like a real photo taken by a professional photographer — NOT an illustration, NOT a 3D render, NOT digital art. Focus on realistic lighting, natural textures, and real-world subjects. ONLY return the prompt text."
         
-        if image_bytes:
-            prompt_text = f"Analyze this image and the article title: '{article_title}'. Write a highly detailed, professional English prompt (max 500 chars) that can be used in an AI image generator to completely recreate this image in a highly modern, professional, 16:9 4k photographic style suitable for a tech magazine cover. Return ONLY the English prompt string, absolutely no other text."
-        
-        generated_prompt = f"A highly professional, modern 16:9 4k tech magazine cover illustration for {article_title}."
+        generated_prompt = f"A photorealistic editorial photograph for an article about {article_title}, shot with a Canon EOS R5, natural lighting, sharp focus, 4K resolution."
         
         while attempt < max_retries:
-            if GLOBAL_STOP_EVENT.is_set(): return original_url
-            
             api_key = get_next_api_key()
             if not api_key: break
-            
             try:
                 client = genai.Client(api_key=api_key)
                 contents = []
@@ -135,32 +133,19 @@ def analyze_and_generate_image(original_url: str, article_title: str) -> str:
                     contents.append(types.Part.from_bytes(data=image_bytes, mime_type=content_type))
                 contents.append(prompt_text)
                 
-                resp = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=contents
-                )
-                
+                resp = client.models.generate_content(model='gemini-2.0-flash', contents=contents)
                 if resp and resp.text:
-                    generated_prompt = resp.text.strip().replace('\n', ' ')
-                    log_info(f"[Image AI] Synthesized visual prompt parameter mapped.")
+                    generated_prompt = resp.text.strip()
+                    log_info(f"[Image AI] Gemini prompt synthesis successful.")
                     break
+            except Exception:
+                attempt += 1
                     
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                    attempt = attempt + 1
-                    continue
-                else:
-                    log_info(f"[Image AI] Gemini prompt parsing aborted: {e}")
-                    break
-                    
-        # 3. Stream generated prompt text back into Hugging Face for authentic rendering
         return generate_flux_image(generated_prompt)
         
     except Exception as e:
-        log_info(f"[Image AI] Failed to bridge image generation node loop: {e}.")
-        return "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&q=80"
+        log_info(f"[Image AI] Pipeline fault: {e}. Using title-based fallback.")
+        return get_dynamic_placeholder(article_title)
 
 def process_article_image(original_url: str, article_title: str) -> str:
-    log_info(f"[Image Handler] Fetching and modeling original visual frame: {original_url}")
     return analyze_and_generate_image(original_url, article_title)

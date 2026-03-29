@@ -1,8 +1,9 @@
 import json
 import os
-import subprocess
+import threading
+import time
 import sys
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from datetime import datetime
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "bot", "dynamic_settings.json")
@@ -11,57 +12,40 @@ AUDIT_FILE = os.path.join(os.path.dirname(__file__), "bot", "audit_log.csv")
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
+# ── Global bot state ──
+bot_thread = None
+bot_running = False
+bot_stop_requested = False
+
 AVAILABLE_REGIONS = {
-    "us": "United States",
-    "gb": "United Kingdom",
-    "de": "Germany",
-    "fr": "France",
-    "ca": "Canada",
-    "au": "Australia",
-    "nl": "Netherlands",
-    "se": "Sweden",
-    "es": "Spain",
-    "it": "Italy",
-    "in": "India",
-    "br": "Brazil",
-    "jp": "Japan",
-    "kr": "South Korea",
-    "za": "South Africa",
-    "ie": "Ireland",
-    "nz": "New Zealand",
-    "sg": "Singapore",
+    "us": "الولايات المتحدة",
+    "gb": "بريطانيا",
+    "de": "ألمانيا",
+    "fr": "فرنسا",
+    "ca": "كندا",
+    "au": "أستراليا",
+    "nl": "هولندا",
+    "se": "السويد",
+    "es": "إسبانيا",
+    "it": "إيطاليا",
+    "in": "الهند",
+    "br": "البرازيل",
+    "jp": "اليابان",
+    "kr": "كوريا الجنوبية",
+    "za": "جنوب أفريقيا",
+    "ie": "أيرلندا",
+    "nz": "نيوزيلندا",
+    "sg": "سنغافورة",
 }
 
 MODULE_LABELS = {
-    "seo_agent": {"name": "SEO Research Agent", "phase": 1, "desc": "Searches the live web for the latest Google ranking rules."},
-    "ml_engine": {"name": "ML Analytics Engine", "phase": 2, "desc": "Runs regression analysis on article features vs traffic."},
-    "social_scraper": {"name": "Social Problem Scraper", "phase": 4, "desc": "Scrapes DuckDuckGo for trending tech problems."},
-    "competitor_monitor": {"name": "Competitor Monitor", "phase": 5, "desc": "Monitors competitor sitemaps for new content."},
-    "content_refresh": {"name": "Content Decay Scanner", "phase": 5, "desc": "Finds and refreshes outdated articles."},
-    "internal_linker": {"name": "Internal Link Builder", "phase": 5, "desc": "Auto-injects semantic internal links."},
-    "trend_spotter": {"name": "Trend Spotter", "phase": 5, "desc": "Detects viral trends before they peak."},
-    "ab_tester": {"name": "A/B Title Tester", "phase": 5, "desc": "Rotates article titles to optimize CTR."},
-    "omni_channel": {"name": "Social Media Publisher", "phase": 6, "desc": "Posts to social channels automatically."},
-    "auto_media": {"name": "Auto Image Generator", "phase": 6, "desc": "Generates article thumbnails and graphics."},
-    "auto_moderator": {"name": "AI Community Moderator", "phase": 6, "desc": "Auto-replies to comments and questions."},
-    "auto_translator": {"name": "Auto Translator", "phase": 6, "desc": "Translates content for international SEO."},
-    "ad_optimizer": {"name": "Ad Revenue Optimizer", "phase": 6, "desc": "Optimizes ad placements for max revenue."},
-    "schema_injector": {"name": "Schema/Rich Snippet Injector", "phase": 7, "desc": "Generates JSON-LD structured data."},
-    "keyword_gap": {"name": "Keyword Gap Analyzer", "phase": 7, "desc": "Finds keywords competitors rank for that you don't."},
-    "core_web_vitals": {"name": "Core Web Vitals Monitor", "phase": 7, "desc": "Monitors PageSpeed and LCP/CLS/FID."},
-    "sitemap_generator": {"name": "Dynamic Sitemap Generator", "phase": 7, "desc": "Rebuilds sitemap.xml and pings search engines."},
-    "broken_link_guardian": {"name": "Broken Link Guardian", "phase": 7, "desc": "Scans and fixes 404 dead links."},
-    "user_intent_analyzer": {"name": "User Intent Analyzer", "phase": 8, "desc": "Classifies search intent (Buy vs Learn)."},
-    "algo_update_radar": {"name": "Algorithm Update Radar", "phase": 8, "desc": "Detects Google algorithm update turbulence."},
-    "visitor_profiler": {"name": "Visitor Behavior Profiler", "phase": 8, "desc": "Analyzes bounce rates and dwell time."},
-    "auto_backlink_builder": {"name": "Auto Backlink Prospector", "phase": 8, "desc": "Finds guest post opportunities for link building."},
-    "early_warning_system": {"name": "Rank Early Warning System", "phase": 8, "desc": "Alerts when top keywords drop in rankings."},
-    "smart_dashboard": {"name": "Smart Dashboard Reporter", "phase": 8, "desc": "Compiles visual reports for Telegram."},
-    "memory_bank": {"name": "Long-Term Memory Bank", "phase": 9, "desc": "Stores all decisions for learning from history."},
-    "reinforcement_loop": {"name": "Self-Correction Engine", "phase": 9, "desc": "Reverts bad ML decisions automatically."},
-    "strategy_generator": {"name": "AI Strategy Inventor", "phase": 9, "desc": "Uses LLM to brainstorm novel SEO tactics."},
-    "decision_engine": {"name": "Priority Decision Engine", "phase": 10, "desc": "Dynamically triages which modules run today."},
-    "audit_logger": {"name": "Executive Audit Logger", "phase": 10, "desc": "Logs every action to CSV for transparency."},
+    "reinforcement_loop": {"name": "محرك التصحيح الذاتي", "phase": 1, "desc": "يقيّم نتائج القرارات السابقة ويصحح الأخطاء."},
+    "strategy_generator": {"name": "مخترع التكتيكات", "phase": 1, "desc": "يبتكر تكتيكات سيو جديدة من ذاكرة البوت."},
+    "decision_engine": {"name": "محرك اتخاذ القرار", "phase": 1, "desc": "يحدد أولويات التشغيل حسب سجل العمليات."},
+    "article_pipeline": {"name": "محرك نشر المقالات", "phase": 2, "desc": "يسحب مقالات → يعيد كتابتها بالذكاء الاصطناعي → ينشرها."},
+    "ml_engine": {"name": "محرك التعلم الآلي", "phase": 3, "desc": "يحلل بيانات الأداء ويحسّن إعدادات المقالات."},
+    "competitor_monitor": {"name": "مراقب المنافسين", "phase": 3, "desc": "يفحص مواقع المنافسين للمحتوى الجديد."},
+    "sitemap_generator": {"name": "مولد خريطة الموقع", "phase": 3, "desc": "يحدث sitemap.xml ويرسله لمحركات البحث."},
 }
 
 def load_settings():
@@ -124,25 +108,126 @@ def save():
         if key in modules:
             settings["modules"][key] = modules[key]
     
+    # Update scraping sources
+    scraping = data.get("scraping_sources", {})
+    if scraping:
+        settings["scraping_sources"] = {
+            "competitor_sitemaps": scraping.get("competitor_sitemaps", []),
+            "reddit_subreddits": scraping.get("reddit_subreddits", []),
+            "rss_feeds": scraping.get("rss_feeds", []),
+        }
+    
     save_settings(settings)
-    return jsonify({"status": "ok", "message": "Settings saved successfully!"})
+    return jsonify({"status": "ok", "message": "تم حفظ الإعدادات بنجاح!"})
 
 
-@app.route("/api/run", methods=["POST"])
-def run_nerve_center():
+# ── Background Bot Execution ──
+
+def _run_bot_background():
+    """Runs the full Nerve Center pipeline in an INFINITE loop in a background thread."""
+    global bot_running, bot_stop_requested
+    bot_running = True
+    bot_stop_requested = False
+    
+    from bot.logger import log_info
+    from bot.site_controller import StopBotException
+    
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "bot.site_controller"],
-            cwd=os.path.dirname(__file__),
-            capture_output=True, text=True, timeout=120,
-            encoding="utf-8", errors="replace"
-        )
-        output = result.stdout[-2000:] if result.stdout else "No output"
-        return jsonify({"status": "ok", "output": output, "exit_code": result.returncode})
-    except subprocess.TimeoutExpired:
-        return jsonify({"status": "error", "message": "Nerve Center timed out (2 min limit)."})
+        while not bot_stop_requested:
+            log_info("=" * 50)
+            log_info("[مركز التحكم] بدء دورة النشر الذاتي الكاملة...")
+            log_info("=" * 50)
+            
+            from bot.site_controller import run_site_controller_with_stop_check
+            run_site_controller_with_stop_check(lambda: bot_stop_requested)
+            
+            log_info("=" * 50)
+            log_info("[مركز التحكم] ✅ اكتملت الدورة بنجاح!")
+            log_info("=" * 50)
+            
+            if bot_stop_requested:
+                break
+                
+            # Sleep for the configured interval before running again
+            settings = load_settings()
+            interval_hours = settings.get("scheduler_interval_hours", 6)
+            interval_seconds = interval_hours * 3600
+            
+            log_info(f"[مركز التحكم] 😴 البوت في وضع السبات... الدورة القادمة بعد {interval_hours} ساعات.")
+            
+            # Sleep in chunks to remain responsive to stop requests
+            for _ in range(int(interval_seconds)):
+                if bot_stop_requested:
+                    break
+                time.sleep(1)
+                
+    except StopBotException:
+        log_info("[مركز التحكم] ⛔ تم إيقاف البوت بواسطة المستخدم.")
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        log_info(f"[مركز التحكم] ❌ خطأ عام: {e}")
+    finally:
+        bot_running = False
+        bot_stop_requested = False
+
+
+class StopBotException(Exception):
+    pass
+
+
+@app.route("/api/start", methods=["POST"])
+def start_bot():
+    global bot_thread, bot_running
+    if bot_running:
+        return jsonify({"status": "error", "message": "البوت شغال بالفعل!"})
+    
+    bot_thread = threading.Thread(target=_run_bot_background, daemon=True)
+    bot_thread.start()
+    return jsonify({"status": "ok", "message": "تم تشغيل البوت!"})
+
+
+@app.route("/api/stop", methods=["POST"])
+def stop_bot():
+    global bot_stop_requested
+    if not bot_running:
+        return jsonify({"status": "error", "message": "البوت مش شغال حالياً."})
+    
+    bot_stop_requested = True
+    return jsonify({"status": "ok", "message": "جاري إيقاف البوت..."})
+
+
+@app.route("/api/status")
+def bot_status():
+    return jsonify({"running": bot_running, "stop_requested": bot_stop_requested})
+
+
+@app.route("/api/logs")
+def stream_logs():
+    """SSE endpoint: streams live logs to the dashboard using an absolute counter."""
+    from bot.logger import get_logs
+
+    def generate():
+        last_idx = 0
+        while True:
+            current_logs, current_counter = get_logs()
+            
+            # Send initial state or all logs if starting fresh
+            if last_idx == 0 and current_counter > 0:
+                for log_line in current_logs:
+                    yield f"data: {json.dumps({'log': log_line}, ensure_ascii=False)}\n\n"
+                last_idx = current_counter
+            elif current_counter > last_idx:
+                new_logs_count = min(current_counter - last_idx, len(current_logs))
+                new_logs = current_logs[-new_logs_count:]
+                for log_line in new_logs:
+                    yield f"data: {json.dumps({'log': log_line}, ensure_ascii=False)}\n\n"
+                last_idx = current_counter
+            
+            # Also send status heartbeat
+            yield f"data: {json.dumps({'status': bot_running, 'stop_requested': bot_stop_requested})}\n\n"
+            time.sleep(0.5)
+
+    return Response(generate(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
 
 if __name__ == "__main__":
@@ -150,4 +235,4 @@ if __name__ == "__main__":
     print("  NERVE CENTER DASHBOARD")
     print("  Open http://localhost:5050 in your browser")
     print("=" * 50)
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    app.run(host="0.0.0.0", port=5050, debug=False, threaded=True)

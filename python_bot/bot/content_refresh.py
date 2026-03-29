@@ -29,36 +29,48 @@ def run_content_decay_scan():
         log_info(f"[Nerve Center | Content Refresher] Detected decay in article: '{article['title']}'")
         log_info(f"[Nerve Center | Content Refresher] Action: Sending content to LLM to append 'Updated [2026] Section'...")
         
-        api_key = get_next_api_key()
-        if not api_key:
-            log_info("[Nerve Center | Content Refresher] No API key available for LLM update.")
-            return
-            
-        client = genai.Client(api_key=api_key)
-        prompt = f"""
-        You are an SEO content updater.
-        I have this old article titled "{article['title']}".
+        max_retries = 8
+        attempt = 0
+        while attempt < max_retries:
+            api_key = get_next_api_key()
+            if not api_key:
+                log_info("[Nerve Center | Content Refresher] No API key available for LLM update.")
+                return
+                
+            try:
+                client = genai.Client(api_key=api_key)
+                prompt = f"""
+                You are an SEO content updater.
+                I have this old article titled "{article['title']}".
+                
+                Original Content:
+                {article['content'][:1000]}...
+                
+                Please generate a single HTML paragraph starting with <h3>2026 Update</h3> followed by a fresh 3-sentence update about this topic.
+                Output ONLY the raw HTML. Nothing else. No markdown blocks.
+                """
+                
+                response_llm = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+                append_html = response_llm.text.strip().replace('```html', '').replace('```', '')
+                
+                new_content = article['content'] + "\n\n" + append_html
+                
+                # Update live Supabase record
+                new_timestamp = datetime.now(timezone.utc).isoformat()
+                res = supabase.table("articles").update({"content": new_content, "publishedAt": new_timestamp}).eq("id", article["id"]).execute()
+                
+                log_info(f"[Nerve Center | Content Refresher] [SUCCESS] Supabase Record Updated! Appended 2026 freshness to '{article['title']}'.")
+                return
+                
+            except Exception as e:
+                error_str = str(e)
+                log_info(f"[Nerve Center | Content Refresher] Failed to refresh content: '{error_str}'. Rotating key... ({attempt+1}/{max_retries})")
+                attempt += 1
+                continue
+                
+        log_info("[Nerve Center | Content Refresher] Exhausted all API keys or retries.")
         
-        Original Content:
-        {article['content'][:1000]}...
-        
-        Please generate a single HTML paragraph starting with <h3>2026 Update</h3> followed by a fresh 3-sentence update about this topic.
-        Output ONLY the raw HTML. Nothing else. No markdown blocks.
-        """
-        
-        response_llm = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-        append_html = response_llm.text.strip().replace('```html', '').replace('```', '')
-        
-        new_content = article['content'] + "\n\n" + append_html
-        
-        # Update live Supabase record
-        new_timestamp = datetime.now(timezone.utc).isoformat()
-        res = supabase.table("articles").update({"content": new_content, "publishedAt": new_timestamp}).eq("id", article["id"]).execute()
-        
-        log_info(f"[Nerve Center | Content Refresher] [SUCCESS] Supabase Record Updated! Appended 2026 freshness to '{article['title']}'.")
-
     except Exception as e:
-        log_info(f"[Nerve Center | Content Refresher] Failed to refresh content: {e}")
-
+        log_info(f"[Nerve Center | Content Refresher] Failed to execute content decay scan: {e}")
 if __name__ == "__main__":
     run_content_decay_scan()

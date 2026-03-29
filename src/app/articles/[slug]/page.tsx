@@ -78,7 +78,7 @@ async function getArticle(slug: string) {
 
       let htmlContent = '';
       if (data.content && typeof data.content === 'string' && data.content.trim().length > 0) {
-        htmlContent = await marked.parse(data.content);
+        htmlContent = await marked.parse(data.content, { gfm: true, breaks: true });
       } else if (data.blocks && Array.isArray(data.blocks)) {
         for (const block of data.blocks) {
           if (block.type === 'heading') {

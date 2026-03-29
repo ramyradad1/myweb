@@ -1,12 +1,7 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 import ArticleCard from '@/components/ArticleCard';
 import { supabase } from '@/lib/supabase';
-
-
 
 interface Article {
   id: string;
@@ -19,50 +14,50 @@ interface Article {
   slug: string;
 }
 
-export default function Home() {
-  const [latestArticles, setLatestArticles] = useState<Article[]>([]);
+// Revalidate every 60 seconds so Google always sees fresh content
+export const revalidate = 60;
 
-  useEffect(() => {
-    const fetchLatest = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('articles')
-          .select('*')
-          .order('publishedAt', { ascending: false })
-          .limit(3);
+async function getLatestArticles(): Promise<Article[]> {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('publishedAt', { ascending: false })
+      .limit(3);
 
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mappedArticles = data.map((article: any) => {
-            const pubDate = article.publishedAt ? new Date(article.publishedAt) : null;
-            const dateStr = pubDate ? pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recent';
-            
-            const contentStr = typeof article.content === 'string' ? article.content : '';
-            const contentLength = contentStr.length;
-            const readMins = Math.max(3, Math.ceil(contentLength / 1200));
-            const excerpt = article.metaDescription || contentStr.replace(/<[^>]*>/g, '').substring(0, 160) + '...' || article.title;
+    if (error) throw error;
 
-            return {
-              id: article.id,
-              title: article.title || 'Untitled',
-              excerpt,
-              imageUrl: article.heroImage || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80',
-              category: article.category || 'Technology',
-              date: dateStr,
-              readTime: `${readMins} min read`,
-              slug: article.slug || article.id,
-            };
-          });
-          setLatestArticles(mappedArticles);
-        }
-      } catch (err) {
-        console.error('Failed to fetch latest articles:', err);
-      }
-    };
-    fetchLatest();
-  }, []);
+    if (data && data.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return data.map((article: any) => {
+        const pubDate = article.publishedAt ? new Date(article.publishedAt) : null;
+        const dateStr = pubDate ? pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recent';
+
+        const contentStr = typeof article.content === 'string' ? article.content : '';
+        const contentLength = contentStr.length;
+        const readMins = Math.max(3, Math.ceil(contentLength / 1200));
+        const excerpt = article.metaDescription || contentStr.replace(/<[^>]*>/g, '').substring(0, 160) + '...' || article.title;
+
+        return {
+          id: article.id,
+          title: article.title || 'Untitled',
+          excerpt,
+          imageUrl: article.heroImage || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80',
+          category: article.category || 'Technology',
+          date: dateStr,
+          readTime: `${readMins} min read`,
+          slug: article.slug || article.id,
+        };
+      });
+    }
+  } catch (err) {
+    console.error('Failed to fetch latest articles:', err);
+  }
+  return [];
+}
+
+export default async function Home() {
+  const latestArticles = await getLatestArticles();
 
   return (
     <>

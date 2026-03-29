@@ -1,7 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from supabase import create_client
+from .supabase_client import get_supabase_client
 
 load_dotenv()
 
@@ -22,13 +22,6 @@ DEFAULT_CONFIG = {
     "editorial_depth": 50,
     "auto_translate": False
 }
-
-def get_supabase_client():
-    supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not supabase_url or not supabase_key:
-        return None
-    return create_client(supabase_url, supabase_key)
 
 def load_config() -> dict:
     config = DEFAULT_CONFIG.copy()

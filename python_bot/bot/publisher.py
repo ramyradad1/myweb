@@ -1,8 +1,6 @@
 import os
 import random
 from datetime import datetime, timezone
-from supabase import create_client, Client
-import os
 from dotenv import load_dotenv
 from .logger import log_info
 from .state import GLOBAL_STOP_EVENT
@@ -13,23 +11,25 @@ from .rewriter import rewrite_article
 from .uniqueness import check_uniqueness
 from .image_handler import process_article_image
 from .social_poster import auto_share_article, ArticleMetrics
+from .supabase_client import get_supabase_client
 
 load_dotenv()
 
-# Setup Supabase
-supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-# Use the service role key for admin privileges in the backend bot
-supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-if not supabase_url or not supabase_key:
-    log_info("Supabase URL or Service Role Key missing from environment variables.")
-    supabase_client: Client | None = None
-else:
-    supabase_client = create_client(supabase_url, supabase_key)
-def is_url_processed(url: str) -> bool:
-    if not supabase_client: return False
+def _get_client():
+    """Lazy Supabase client getter — avoids hanging at import time."""
     try:
-        response = supabase_client.table('articles').select('sourceUrl').eq('sourceUrl', url).execute()
+        return get_supabase_client()
+    except Exception as e:
+        log_info(f"[Publisher] ❌ فشل الاتصال بـ Supabase: {e}")
+        return None
+
+
+def is_url_processed(url: str) -> bool:
+    client = _get_client()
+    if not client: return False
+    try:
+        response = client.table('articles').select('sourceUrl').eq('sourceUrl', url).execute()
         return len(response.data) > 0
     except Exception:
         return False
@@ -113,8 +113,9 @@ def process_scraped_data(scraped_data: dict) -> bool:
             "publishedAt": datetime.now(timezone.utc).isoformat(),
         }
 
-        if supabase_client:
-            supabase_client.table('articles').insert(article_document).execute()
+        client = _get_client()
+        if client:
+            client.table('articles').insert(article_document).execute()
             log_info(f"✅ Successfully published: /articles/{rewritten.get('slug')}")
             
             # 6. Auto share

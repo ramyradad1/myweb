@@ -1,40 +1,63 @@
 import { MetadataRoute } from 'next';
+import { supabase } from '@/lib/supabase';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.technify.space'; // Change back to real domain
+// Revalidate sitemap every 60 seconds so Google gets fresh URLs
+export const revalidate = 60;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = 'https://technify.space';
   
-  // Static Routes
-  const routes = [
+  // 1. Static Routes (NO /admin - it should never be in sitemap)
+  const staticRoutes = [
     '',
     '/articles',
-    '/admin',
+    '/about',
+    '/privacy',
+    '/terms',
+    '/contact'
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
-    priority: route === '' ? 1 : 0.8,
+    priority: route === '' ? 1.0 : 0.8,
   }));
 
-  // Mock Dynamic Routes (Will be replaced with DB fetch)
-  const articles = [
-    'future-of-ai-2026',
-    'seo-strategies-arabic-content'
-  ].map((slug) => ({
-    url: `${baseUrl}/articles/${slug}`,
-    lastModified: new Date(),
+  // 2. Fetch all articles from Supabase
+  let articles: any[] = [];
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('slug, publishedAt, category')
+      .order('publishedAt', { ascending: false });
+
+    if (!error && data) {
+      articles = data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch articles for sitemap:', error);
+  }
+
+  // 3. Dynamic Article Routes
+  const articleRoutes = articles.map((article) => ({
+    url: `${baseUrl}/articles/${article.slug}`,
+    lastModified: article.publishedAt ? new Date(article.publishedAt) : new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  const categories = [
-    'تكنولوجيا',
-    'أعمال'
-  ].map((cat) => ({
+  // 4. Dynamic Categories (Extract unique categories from articles)
+  const uniqueCategories = Array.from(new Set(articles.map(a => a.category).filter(Boolean)));
+  // Add some fallback categories if DB is empty
+  const categories = uniqueCategories.length > 0 
+    ? uniqueCategories 
+    : ['Technology', 'AI', 'Business', 'Health'];
+
+  const categoryRoutes = categories.map((cat) => ({
     url: `${baseUrl}/category/${encodeURIComponent(cat)}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: 0.6,
   }));
 
-  return [...routes, ...articles, ...categories];
+  return [...staticRoutes, ...articleRoutes, ...categoryRoutes];
 }
