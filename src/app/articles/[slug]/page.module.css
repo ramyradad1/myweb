@@ -96,7 +96,13 @@
 
 .articleBody ul {
   list-style-type: disc;
-  padding-right: 2rem;
+  padding-left: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.articleBody ol {
+  list-style-type: decimal;
+  padding-left: 2rem;
   margin-bottom: 1.5rem;
 }
 
@@ -104,8 +110,19 @@
   margin-bottom: 0.5rem;
 }
 
+.articleBody strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.articleBody a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .articleBody blockquote {
-  border-right: 4px solid var(--primary);
+  border-left: 4px solid var(--primary);
   padding: 1rem 2rem;
   margin: 2rem 0;
   background: var(--background-secondary);
@@ -142,4 +159,31 @@
 .tag:hover {
   background: var(--border);
   color: var(--foreground);
+}
+
+.articleBody pre {
+  background: var(--background-secondary);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.9em;
+  border: 1px solid var(--border);
+}
+
+.articleBody code {
+  background: var(--background-secondary);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.85em;
+  color: var(--primary);
+}
+
+.articleBody pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--foreground);
+  border: none;
 }
