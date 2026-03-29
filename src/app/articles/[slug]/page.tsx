@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 import ArticleReactions from '@/components/reactions/ArticleReactions';
 import CommentSection from '@/components/comments/CommentSection';
+import CopyableArticleBody from '@/components/CopyableArticleBody';
 import { marked } from 'marked';
 
 // Define the expected params for Next.js App Router
@@ -254,10 +255,7 @@ export default async function ArticlePage({ params }: Props) {
         <img src={article.imageUrl} alt={article.title} className={styles.heroImage} />
       </div>
 
-      <div 
-        className={styles.articleBody}
-        dangerouslySetInnerHTML={{ __html: article.content }}
-      />
+      <CopyableArticleBody content={article.content} />
 
       <div className={styles.tagsContainer}>
         <span className={styles.tagLabel}>Tags:</span>
