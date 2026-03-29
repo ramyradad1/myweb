@@ -1,0 +1,11 @@
+# Bot files
+python_bot/
+python_bot.zip
+test_imagen.py
+
+# Environment files (Allowed for Vercel deployment since they are missing in Dashboard)
+# .env files are intentionally not ignored here to restore site connectivity.
+# Other
+.git/
+node_modules/
+scripts/
