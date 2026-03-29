@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // 2. Fetch all articles from Supabase
-  let articles: any[] = [];
+  let articles: { slug?: string; publishedAt?: string; category?: string }[] = [];
   try {
     const { data, error } = await supabase
       .from('articles')
@@ -46,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // 4. Dynamic Categories (Extract unique categories from articles)
-  const uniqueCategories = Array.from(new Set(articles.map(a => a.category).filter(Boolean)));
+  const uniqueCategories = Array.from(new Set(articles.map(a => a.category).filter((cat): cat is string => Boolean(cat))));
   // Add some fallback categories if DB is empty
   const categories = uniqueCategories.length > 0 
     ? uniqueCategories 

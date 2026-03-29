@@ -12,8 +12,8 @@ if (!admin.apps.length) {
       databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
     });
     console.log('[Firebase Admin] Initialized successfully.');
-  } catch (error: any) {
-    console.error('[Firebase Admin] Initialization error:', error.message);
+  } catch (error: unknown) {
+    console.error('[Firebase Admin] Initialization error:', error instanceof Error ? error.message : String(error));
   }
 }
 
