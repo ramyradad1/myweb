@@ -9,10 +9,18 @@ const nextConfig: NextConfig = {
   // Redirect www to non-www for canonical consistency
   async redirects() {
     return [
+      // Redirect www.technify.space to technify.space (all paths)
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.technify.space' }],
         destination: 'https://technify.space/:path*',
+        permanent: true,
+      },
+      // Redirect www root explicitly
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'www.technify.space' }],
+        destination: 'https://technify.space/',
         permanent: true,
       },
     ];

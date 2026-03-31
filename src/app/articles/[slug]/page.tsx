@@ -13,38 +13,7 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-// Fallback article logic (moved to server side)
-const fallbackArticle = (slug: string) => ({
-  id: '00000000-0000-0000-0000-000000000000',
-  title: `The Bright Future of ${slug.replace(/-/g, ' ')}`,
-  category: 'Technology',
-  author: 'Senior Editor',
-  date: 'March 24, 2026',
-  readTime: '6 min read',
-  imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80',
-  content: `
-    <p>This is the introduction to our exclusive editorial piece. This content has been meticulously researched and synthesized to ensure true value is delivered to the reader, guaranteeing 100% unique insights to dominate Google search results.</p>
-    
-    <h2>The Importance of the Subject Today</h2>
-    <p>Given the rapid developments, we find that this field is growing at a tremendous pace. Modern technologies have sparked a true revolution in how we work and interact with the world around us.</p>
-    
-    <blockquote>True innovation does not lie in creating something from absolute nothingness, but in connecting the dots in a way never seen before.</blockquote>
-    
-    <h3>How Can We Leverage This Technology?</h3>
-    <ul>
-      <li>Improving productivity in daily workflows.</li>
-      <li>Automating routine and tedious tasks.</li>
-      <li>Opening new horizons for innovation and solving complex problems.</li>
-    </ul>
-    
-    <p>In conclusion, adopting these technologies is no longer just a luxury; it is a necessity to remain competitive in today's market.</p>
-  `,
-  tags: ['Innovation', 'Future Tech', 'Automation', 'Business'],
-  isoDate: new Date().toISOString(),
-  reaction_like: 0,
-  reaction_love: 0,
-  reaction_mindblown: 0
-});
+
 
 // Fetch article data (Server-side)
 async function getArticle(slug: string) {
@@ -124,16 +93,7 @@ async function getArticle(slug: string) {
     console.error('Failed to fetch article server-side:', error);
   }
   
-  // Return fallback if database fails (prevents 404s for mocked slugs)
-  if (slug === 'future-of-ai-2026' || slug === 'seo-strategies-arabic-content') {
-    const fb = fallbackArticle(slug);
-    return {
-      ...fb,
-      metaDescription: fb.content.replace(/<[^>]+>/g, '').substring(0, 150) + '...',
-      wordCount: 850
-    };
-  }
-  
+
   return null;
 }
 
