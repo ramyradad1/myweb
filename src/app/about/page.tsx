@@ -4,6 +4,13 @@ import styles from './page.module.css';
 export const metadata: Metadata = {
   title: 'About Us | Technify',
   description: 'Learn about Technify, a premium editorial platform delivering expert-curated analysis daily.',
+  alternates: {
+    canonical: 'https://technify.space/about',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function AboutPage() {
